@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche d'employés</title>
+</head>
+<body>
+
+    <h2> Vous avez la possibilté d'effectuer une recherche selon le nom, le prénom ou une des addresses email de l'employé.</h2>
+<!-- Formulaire de recherche -->
+<form action="{% url 'recherche' %}" method="POST">
+    {% csrf_token %}
+    <input type="text" id="search" name="employee_name_or_email" placeholder="nom, prénom,addresse e-mail">
+    <button type="submit">Rechercher</button>
+  </form>
+</body>
+</html>
+

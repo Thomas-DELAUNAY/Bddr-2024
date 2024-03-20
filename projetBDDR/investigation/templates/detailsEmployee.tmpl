@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informations sur les employés</title>
+</head>
+
+<body>
+    <!-- Affichage des détails de l'employé -->
+    {% if employees %}
+        {% for employee in employees %}
+            <h2> Détails de {{ employee.firstname }} {{ employee.lastname }}</h2>
+            <p>Nom : {{ employee.lastname }}</p>
+            <p>Prénom : {{ employee.firstname }}</p>
+            <p>Catégorie : {{ employee.category }}</p>
+            <p>Adresses e-mail : 
+            <ul>
+                {% for email in employee.addresseemail_set.all %}
+                    <li>{{ email.addresse }}</li>
+                {% endfor %}
+            </ul>
+            </p>
+        {% endfor %}
+    {% else %}
+        <p>Aucun employé trouvé.</p>
+    {% endif %}
+
+    <footer>
+        <p>© 2024 Informations sur les employés. Tous droits réservés.</p>
+    </footer>
+</body>
+</html>

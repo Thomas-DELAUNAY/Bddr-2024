@@ -7,7 +7,6 @@ class Employee(models.Model):
     category = models.CharField(max_length=50, null=True)
     mailbox = models.CharField(max_length=50)
     
-    
     #ici on définira le couple (lastname,firstname) comme clé primaire,unique
     class Meta:
         # Spécifier l'unicité du couple (firstname, lastname)
