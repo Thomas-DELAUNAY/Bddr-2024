@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head> 
-  <title>Liste des employés d'Enron</title>
+<head> <title>Employés Enron</title>
   <style>   
     table.mon_tableau  {
         border-collapse: collapse;
@@ -14,21 +13,17 @@
        font-size: 14px;
     }
     table.mon_tableau th {
-       background-color: #f5ba67;
+       background-color: whitesmoke;
     }
     table.mon_tableau tr:nth-child(even)  {background-color: #f7e5bc;}
     table.mon_tableau tr:nth-child(odd) {background-color: #f5cb6c;}
-    
-    /* Style ajouté avec JavaScript */
-    .highlighted {
-        background-color: yellow;
-    }
+  
   </style>
 </head>
 
 <body> 
 
-<h1>Listes des employés</h1>
+<h1>Listes des employés d'Enron</h1>
 {% if rien %}
   Aucune page n'a été consulté
 {% else %}

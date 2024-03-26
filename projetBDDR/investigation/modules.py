@@ -1,13 +1,10 @@
 import re,os
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
-from django.conf import settings
 import xml.etree.ElementTree as ET
-import datetime, time
+import datetime
 import multiprocessing
 from multiprocessing import Pool # pour optimiser le temps d'exécution du programme
 from django.db import transaction
-import traceback
 
 
 # Import des modèles 
@@ -27,9 +24,9 @@ def extract_emails(employee):
 def traitment_file_xml(xml_file_path):
     
     def _traitment():
-                # Lecture du contenu du fichier xml
+                
         try:
-            with open(xml_file_path, 'r') as file:
+            with open(xml_file_path, 'r') as file: # Lecture du contenu du fichier xml
                 xml_content = file.read()
         except FileNotFoundError:
             print(f" Le fichier {xml_file_path} n'existe pas! ")
@@ -103,17 +100,13 @@ def parcours_file(file_path):
             cc_receiver_match = re.search(r"Cc:  (.+)", contenu)  #ok
             bcc_receiver_match = re.search(r"Bcc:  (.+)", contenu)  #ok
             subject_match = re.search(r"Subject: (.+)", contenu) #ok
-            timestamp_match = re.search(r"Date: (.+) \S+", contenu) #ok 
+            timestamp_match = re.search(r"Date: (.+?\d{4})", contenu) #ok 
             content_start_index = contenu.find("\n\n") + 2  # Trouver l'indice de début du contenu
             content = contenu[content_start_index:]
-            #print(subject_match)
-            
-            # Vérification des correspondances:
-
 
             #Extraction des données
             #email_id=id_match.group(1)
-            date_send = timestamp_match.group(1)
+            date = timestamp_match.group(1)
             sender_email = sender_match.group(1)
             receivers_email = receiver_match.group(1) if receiver_match else ""
             subject = subject_match.group(1) if subject_match else ""
@@ -123,8 +116,8 @@ def parcours_file(file_path):
             
             # Convertir le timestamp en objet datetime
             try:
-                if date_send:
-                    date_send = datetime.datetime.strptime(date_send, "%a, %d %b %Y %H:%M:%S %z")
+                if date:
+                    date = datetime.datetime.strptime(date, "%a, %d %b %Y")
             except ValueError as e:
                 print(f"Erreur lors de la conversion de la date: {e}")
                 return  
@@ -155,7 +148,7 @@ def parcours_file(file_path):
                     
                     # Création de l' Email
                     email = Email.objects.create(
-                                dateSend=date_send,
+                                date=date,
                                 sender_mail= sender,
                                 subject=subject,
                                 contenu=content
@@ -169,16 +162,11 @@ def parcours_file(file_path):
             except Email.DoesNotExist as e:
                 print(f" Erreur lors de l'enregistrement de l'email: {email}")   
             except IntegrityError as e:
-                print(f"Erreur d'intégrité: {e}")  # Imprimer l'erreur d'intégrité sans la trace complète
-                #traceback.print_exc()  # Afficher la trace complète de l'exception seulement pour le débogage
+                print(f"Erreur d'intégrité: {e}") 
+              
           
-# fonction pour traiter les fichiers en parallèle
+# fonction pour traiter les fichiers en parallèle et optimiser le temps d'exécution. Actuellement le peuplement se fait en moins d'une heure
 def traitment_files(files_paths):
     with Pool() as pool:
         pool.map(parcours_file,files_paths)
     print("    Traitement du dossier maildir terminé     ") 
-    
-    
-
-
-
