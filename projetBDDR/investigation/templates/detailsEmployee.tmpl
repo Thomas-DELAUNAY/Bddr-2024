@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Informations </title>
+    <style>
+        body{
+            margin: 0;
+            padding : 0;
+            font-family: Helvetica, sans-serif;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: start;
+        }
+        #back {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+    <!-- Affichage des détails de l'employé -->
+    <h3>Résultats de la recherche</h3>
+    {% if employees %}
+        {% for employee in employees %}
+            <h4>Employé:  </h4>
+            <p>Nom : {{ employee.1 }}</p>
+            <p>Prénom : {{ employee.2 }}</p>
+            <p>Catégorie : {{ employee.3 }}</p>
+            <p>Adresses e-mail : 
+            <ul>
+                {% for e in employee.4%}
+                    <li>{{ e}}</li>
+                {% endfor %}
+            </ul>
+            </p>
+        {% endfor %}
+    {% endif %}
+    </div>
+
+    <div id='results' style="display: flex; justify-content: center;" >
+        <div class="back-button">
+            <button> <a href='{% url "recherche" %}'> Retour </a></button>
+        </div>
+        <div class="back-button">
+            <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
+        </div>
+    </div>
+</body>
+</html>
