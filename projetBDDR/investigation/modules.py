@@ -112,7 +112,7 @@ def parcours_file(file_path):
             subject = subject_match.group(1) if subject_match else ""
             cc_receivers_email = cc_receiver_match.group(1)  if cc_receiver_match else ""
             bcc_receivers_email = bcc_receiver_match.group(1)  if bcc_receiver_match else ""
-            print(receivers_email)
+            #print(receivers_email)
             
             # Convertir le timestamp en objet datetime
             try:
@@ -141,7 +141,7 @@ def parcours_file(file_path):
                     
                     if sender is None:
                         # Si l'expéditeur n'existe pas, nous le créons
-                        sender,test = AddresseEmail.objects.get_or_create(addresse=sender_email)
+                        sender,test = AddresseEmail.objects.get_or_create(addresse=sender_email).clean()
                         print(f" L'addresse {sender_email} a été ajouté avec succès.  ")
                     else:
                         print(f"{sender_email} est déja dans la base.")

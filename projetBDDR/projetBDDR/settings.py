@@ -77,10 +77,10 @@ WSGI_APPLICATION = "projetBDDR.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'projet',
-        'USER': 'postgres',
-        'PASSWORD': 'Fresnay2024@',
-        'HOST': 'localhost',
+        'NAME': 'jngouna',
+        'USER': 'jngouna',
+        'PASSWORD': 'jngouna',
+        'HOST': 'data',
         'PORT': '5432',
     }
 }
