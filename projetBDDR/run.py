@@ -12,7 +12,7 @@ from investigation.modules import *
 # Chemin vers le fichier emlpoyes.XML
 xml_file_path = "/users/2024/ds1/123010405/Documents/Bddr-2024/projetBDDR/employes_enron.xml"
 # Chemin vers le répertoire maildir
-maildir_path = "/users/2024/ds1/123010405/Documents/Bddr-2024/maildir/cash-m"
+maildir_path = "/users/2024/ds1/123010405/Documents/Bddr-2024/maildir/"
 
 if __name__ == '__main__':
     debut = time.time()

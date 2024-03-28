@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
 
@@ -34,8 +35,8 @@ class AddresseEmail(models.Model):
     def clean(self):
         try:
             validate_email(self.addresse)
-        except ValidationError:
-            raise ValidationError({'address_email': 'Adresse e-mail non valide'})
+        except ValidationError :
+            raise ValidationError({'Adresse e-mail non valide : {self.addresse}'})
         
         
 class ReceiversMail(models.Model):
@@ -51,7 +52,7 @@ class ReceiversMail(models.Model):
         unique_together = ('email', 'addresse_email')
         
 class Email(models.Model):
-    date = models.DateField()
+    date = models.DateTimeField()
     sender_mail = models.ForeignKey('AddresseEmail',null=True,default=None, on_delete=models.CASCADE, related_name='sent_email')
     subject = models.CharField(max_length=200, default=None)
     contenu = models.TextField(default='')
