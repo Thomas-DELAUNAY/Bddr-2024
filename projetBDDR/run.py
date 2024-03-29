@@ -10,16 +10,17 @@ django.setup()
 from investigation.modules import *
 
 # Chemin vers le fichier emlpoyes.XML
-xml_file_path = "/users/2024/ds1/123010405/Documents/Bddr-2024/projetBDDR/employes_enron.xml"
+xml_file_path = r"C:\Users\utilisateur\Desktop\BDDR\projetBDDR\employes_enron.xml"
 # Chemin vers le répertoire maildir
-maildir_path = "/users/2024/ds1/123010405/Documents/Bddr-2024/maildir/"
+maildir_path = r"C:\Users\utilisateur\Desktop\BDDR\maildir"
 
 if __name__ == '__main__':
     debut = time.time()
+    
     #pour assurer le remplissage de notre table Employee
     traitment_file_xml(xml_file_path)
     
-    files_paths = parcours_directory(maildir_path)
+    files_paths = parcours_directory(maildir_path)  
     
     traitment_files(files_paths)  # Traitement des fichiers en parallèle
     
