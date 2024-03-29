@@ -56,7 +56,7 @@ def traitment_file_xml(xml_file_path):
             # Vérifier si l'employé existe déjà dans la base de données
             estemployee = Employee.objects.filter(firstname=firstname, lastname=lastname).first()
             if estemployee:# Si l'employé existe déjà, passer à l'employé suivant
-                continue
+                pass
             
             # Peuplement de la table Employee
             try:
@@ -64,8 +64,16 @@ def traitment_file_xml(xml_file_path):
                     emp = Employee.objects.create(lastname=lastname, firstname=firstname, category=category,mailbox=mailbox)
                     
                     for e in emails:
+<<<<<<< HEAD
                         #création de l'addresseEmail
                         ad = AddresseEmail.objects.get_or_create(addresse=e,estInterne=True, employee=emp)[0]
+=======
+                        if '@enron' in e:
+                            #création de l'addresseEmail
+                            ad= AddresseEmail.objects.get_or_create(
+                                addresse=e,estInterne=True, employee=emp)[0]
+                            ad.clean()
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
                             
             except Employee.DoesNotExist as e:
                 print(f" Erreur lors de la création de l'employé {lastname}: {e} ")
@@ -94,29 +102,42 @@ def parcours_file(file_path):
     if os.path.isfile(file_path): #vérifie s'il s'agit bien d'un fichier et non d'un répertoire
         with open(file_path, 'r', encoding='latin1') as f:
             contenu = f.read()
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
             # Extraction des informations nécessaires: sender, recipient, subject, content, timestamp
             sender_match = re.search(r"From: (.+)", contenu) #ok
             receiver_match = re.search(r"To:  (.+)", contenu)  #ok
             cc_receiver_match = re.search(r"Cc:  (.+)", contenu)  #ok
             bcc_receiver_match = re.search(r"Bcc:  (.+)", contenu)  #ok
             subject_match = re.search(r"Subject: (.+)", contenu) #ok
-            timestamp_match = re.search(r"Date: (.+?\d{4})", contenu) #ok 
+            timestamp_match = re.search(r"Date: (\w+, \d+ \w+ \d+ \d+:\d+:\d+)", contenu) #ok
             content_start_index = contenu.find("\n\n") + 2  # Trouver l'indice de début du contenu
             content = contenu[content_start_index:]
 
             #Extraction des données
+<<<<<<< HEAD
+=======
+
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
             date = timestamp_match.group(1)
             sender_email = sender_match.group(1)
             receivers_email = receiver_match.group(1) if receiver_match else ""
             subject = subject_match.group(1) if subject_match else ""
             cc_receivers_email = cc_receiver_match.group(1)  if cc_receiver_match else ""
             bcc_receivers_email = bcc_receiver_match.group(1)  if bcc_receiver_match else ""
+<<<<<<< HEAD
             
+=======
+
+
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
             # Convertir le timestamp en objet datetime
             try:
                 if date:
-                    date = datetime.datetime.strptime(date, "%a, %d %b %Y")
+                    date = datetime.datetime.strptime(date, "%a, %d %b %Y %H:%M:%S")
             except ValueError as e:
                 print(f"Erreur lors de la conversion de la date: {e}")
                 return  
@@ -130,6 +151,7 @@ def parcours_file(file_path):
             to_=[]
             cc_=[]
             bcc_=[]
+<<<<<<< HEAD
             
             for elt1 in chaine1 :
                 if clean(elt1) :
@@ -153,6 +175,30 @@ def parcours_file(file_path):
                         bcc_.append(AddresseEmail.objects.get_or_create(addresse=elt3)[0])            
             
                   
+=======
+
+            #if chaine1 and chaine2 and chaine3:
+
+            for elt1,elt2,elt3 in zip(chaine1,chaine2, chaine3):
+                if elt1.endsWith('@enron') or elt2.endsWith('@enron') or elt3.endsWith('@enron'):
+                    if elt1:
+                        ad1 = AddresseEmail.objects.get_or_create(addresse=elt1, estInterne=True)[0]
+                        ad1.clean()
+                        to_.append(ad1)
+                    if elt2:
+                        ad2 = AddresseEmail.objects.get_or_create(addresse=elt2, estInterne=True)[0]
+                        ad2.clean()
+                        cc_.append(ad2)
+                    if elt:
+                        ad3 = AddresseEmail.objects.get_or_create(addresse=elt3, estInterne=True)[0]
+                        ad3.clean()
+                        bcc_.append(ad3)
+
+            else:
+                #print("Erreur au moins une des chaines est vide")
+                pass
+
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
             # Enregistrement des données dans la BDD               
             try:
                 with transaction.atomic():
@@ -160,6 +206,7 @@ def parcours_file(file_path):
                     # Vérification de l'existence de l'adresse
                     sender = AddresseEmail.objects.filter(addresse=sender_email).first()
                     
+<<<<<<< HEAD
                     if sender:
                         #print(f"{sender} est déja dans la base.")
                         pass                        
@@ -171,6 +218,16 @@ def parcours_file(file_path):
                             sender = AddresseEmail.objects.get_or_create(addresse=sender_email)[0]    
                         print(f" addresse {sender_email} a été ajouté avec succès.  ")
 
+=======
+                    if sender is None:
+                        # Si l'expéditeur n'existe pas, nous le créons
+                        sender = AddresseEmail.objects.get_or_create(addresse=sender_email)[0]
+                        sender.clean()
+                        print(f" L'addresse email {sender} a été ajouté avec succès.  ")
+                    else:
+                        #print(f"{sender_email} est déja dans la base.")
+                        pass
+>>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
                     
                     # Création de l' Email
                     email = Email.objects.create(
