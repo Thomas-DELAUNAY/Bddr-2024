@@ -19,11 +19,7 @@ if __name__ == '__main__':
     #pour assurer le remplissage de notre table Employee
     traitment_file_xml(xml_file_path)
     
-<<<<<<< HEAD
-    files_paths = parcours_directory(maildir_path)  
-=======
     files_paths = parcours_directory(maildir_path)
->>>>>>> 90ac3f11320c1a770795b1434495743f716b0650
     
     traitment_files(files_paths)  # Traitement des fichiers en parallèle
     
