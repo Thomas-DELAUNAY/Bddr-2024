@@ -6,9 +6,13 @@ import multiprocessing
 from multiprocessing import Pool # pour optimiser le temps d'exécution du programme
 from django.db import transaction
 
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 # Import des modèles 
 from .models import Employee,AddresseEmail,ReceiversMail,Email
+
+
 
 # Fonction pour extraire toutes les adresses email d'une instance 'employee' du fichier xml
 def extract_emails(employee):
@@ -58,19 +62,16 @@ def traitment_file_xml(xml_file_path):
             try:
                 if firstname and lastname and category and mailbox:
                     emp = Employee.objects.create(lastname=lastname, firstname=firstname, category=category,mailbox=mailbox)
-                    #print(emp)
                     
                     for e in emails:
-                        if '@enron' in e:
-                            #création de l'addresseEmail
-                            ad,et = AddresseEmail.objects.get_or_create(
-                                addresse=e,estInterne=True, employee=emp)
+                        #création de l'addresseEmail
+                        ad = AddresseEmail.objects.get_or_create(addresse=e,estInterne=True, employee=emp)[0]
                             
             except Employee.DoesNotExist as e:
                 print(f" Erreur lors de la création de l'employé {lastname}: {e} ")
                 
     print("    Traitement du fichier xml terminé     ")                                       
-    return _traitment()
+    _traitment()
 
 
 #Fonction pour parcourir les répertoires
@@ -93,8 +94,8 @@ def parcours_file(file_path):
     if os.path.isfile(file_path): #vérifie s'il s'agit bien d'un fichier et non d'un répertoire
         with open(file_path, 'r', encoding='latin1') as f:
             contenu = f.read()
+            
             # Extraction des informations nécessaires: sender, recipient, subject, content, timestamp
-            #id_match = re.search(r"Message-ID: <(.+).J", contenu) #ok
             sender_match = re.search(r"From: (.+)", contenu) #ok
             receiver_match = re.search(r"To:  (.+)", contenu)  #ok
             cc_receiver_match = re.search(r"Cc:  (.+)", contenu)  #ok
@@ -105,14 +106,12 @@ def parcours_file(file_path):
             content = contenu[content_start_index:]
 
             #Extraction des données
-            #email_id=id_match.group(1)
             date = timestamp_match.group(1)
             sender_email = sender_match.group(1)
             receivers_email = receiver_match.group(1) if receiver_match else ""
             subject = subject_match.group(1) if subject_match else ""
             cc_receivers_email = cc_receiver_match.group(1)  if cc_receiver_match else ""
             bcc_receivers_email = bcc_receiver_match.group(1)  if bcc_receiver_match else ""
-            print(receivers_email)
             
             # Convertir le timestamp en objet datetime
             try:
@@ -128,9 +127,31 @@ def parcours_file(file_path):
             chaine3 = re.findall(r'[\w\.-]+@[\w\.-]+', bcc_receivers_email)
             
             # Création des destinataires d'un email
-            to_ = [AddresseEmail.objects.get_or_create(addresse=elt)[0]  for elt in chaine1]
-            cc_ = [AddresseEmail.objects.get_or_create(addresse=elt)[0] for elt in chaine2 ]
-            bcc_ = [AddresseEmail.objects.get_or_create(addresse=elt)[0] for elt in chaine3]
+            to_=[]
+            cc_=[]
+            bcc_=[]
+            
+            for elt1 in chaine1 :
+                if clean(elt1) :
+                    if '@enron.com' in elt1:
+                        to_.append(AddresseEmail.objects.get_or_create(addresse=elt1,estInterne=True)[0])
+                    else:
+                        to_.append(AddresseEmail.objects.get_or_create(addresse=elt1)[0])
+            
+            for elt2 in chaine2 :
+                if clean(elt2) :
+                    if '@enron.com' in elt2:
+                        cc_.append(AddresseEmail.objects.get_or_create(addresse=elt2,estInterne=True)[0])
+                    else:
+                        cc_.append(AddresseEmail.objects.get_or_create(addresse=elt2)[0])             
+          
+            for elt3 in chaine3 :
+                if clean(elt3) :
+                    if '@enron.com' in elt3:
+                        bcc_.append(AddresseEmail.objects.get_or_create(addresse=elt3,estInterne=True)[0]) 
+                    else:
+                        bcc_.append(AddresseEmail.objects.get_or_create(addresse=elt3)[0])            
+            
                   
             # Enregistrement des données dans la BDD               
             try:
@@ -139,12 +160,17 @@ def parcours_file(file_path):
                     # Vérification de l'existence de l'adresse
                     sender = AddresseEmail.objects.filter(addresse=sender_email).first()
                     
-                    if sender is None:
-                        # Si l'expéditeur n'existe pas, nous le créons
-                        sender,test = AddresseEmail.objects.get_or_create(addresse=sender_email)
-                        print(f" L'addresse {sender_email} a été ajouté avec succès.  ")
-                    else:
-                        print(f"{sender_email} est déja dans la base.")
+                    if sender:
+                        #print(f"{sender} est déja dans la base.")
+                        pass                        
+                        
+                    else: # Si l'addresse de l'expéditeur n'existe pas, nous la créons
+                        if '@enron.com' in sender_email:
+                            sender = AddresseEmail.objects.get_or_create(addresse=sender_email,estInterne=True)[0]
+                        else:
+                            sender = AddresseEmail.objects.get_or_create(addresse=sender_email)[0]    
+                        print(f" addresse {sender_email} a été ajouté avec succès.  ")
+
                     
                     # Création de l' Email
                     email = Email.objects.create(
@@ -158,15 +184,26 @@ def parcours_file(file_path):
                     [ReceiversMail.objects.create(email=email, addresse_email=to, type=ReceiversMail.TO) for to in to_]
                     [ReceiversMail.objects.create(email=email, addresse_email=cc, type=ReceiversMail.CC) for cc in cc_]
                     [ReceiversMail.objects.create(email=email, addresse_email=bcc, type=ReceiversMail.BCC) for bcc in bcc_]
+                    print(' to be continued ')
                                     
             except Email.DoesNotExist as e:
-                print(f" Erreur lors de l'enregistrement de l'email: {email}")   
+                print(f" Erreur lors de l'enregistrement de l'email: {email}")  
+                 
             except IntegrityError as e:
-                print(f"Erreur d'intégrité: {e}") 
+                #print(f"Erreur d'intégrité: {e}") 
+                pass
               
           
 # fonction pour traiter les fichiers en parallèle et optimiser le temps d'exécution. Actuellement le peuplement se fait en moins d'une heure
 def traitment_files(files_paths):
     with Pool() as pool:
         pool.map(parcours_file,files_paths)
-    print("    Traitement du dossier maildir terminé     ") 
+    print("    Traitement du dossier maildir terminé !    ") 
+    
+    
+def clean(ad):
+    try:
+        validate_email(ad)
+        return True  # Retourne True si l'adresse e-mail est valide
+    except ValidationError:
+        return False  # Retourne False si l'adresse e-mail n'est pas valide

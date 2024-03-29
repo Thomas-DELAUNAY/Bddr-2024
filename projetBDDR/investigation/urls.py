@@ -5,6 +5,7 @@ urlpatterns = [
     path('', index, name='index'), 
     path('employees', listeEmployees, name='employees'),
     path('recherche', details_about_employee, name="recherche"),
-    path('echangesEmployees', employees_communication, name='echanges'),
-
+    path('echanges', search_employee, name='echanges'),
+    path('dates', dates, name='dates'),
+    path('details', employees_communication, name='details'),
 ]

@@ -18,31 +18,118 @@
             text-align: start;
         }
 
+        /* Créez une grille pour aligner les boîtes */
+        .grid {
+            display: flexbox;
+            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            grid-gap: 10px;
+        }
+
+        /* Style des boîtes */
+        .box {
+            background-color: #f0f0f0;
+            padding: 5px;
+            margin : 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+
         #back {
             max-width: 1000px;
             margin: auto;
             padding: 10px;
             text-align: center;
         }
+
+
+        .form-group {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h4>Afin de savoir quel employé a échangé des e-mails avec quel autre, sur quelle période de temps, veuillez fournir les informations ci-dessous</h4>
-        
-        <form id="communicationForm" method='POST' action='{% url "echanges" %}'>
+        <h2>Afin de savoir quel employé a échangé des e-mails avec quel autre, veuillez fournir les informations ci-dessous: </h2>
+        <form id="communicationForm" method="POST" action="{% url 'echanges' %}">
             {% csrf_token %}
-            <label for="employee"> Nom ou adresse e-mail de l'employé:  </label>
-            <input type="text" id="search" name="employee" placeholder="nom, prénom ou adresse e-mail">
-            <label for="date_debut"> Date de début: </label>
-            <input type="date" id="date_debut" name="date_debut">
-            <label for="date_fin"> Date de fin: </label>
-            <input type="date" id="date_fin" name="date_fin">
-            <button type="submit"> Soumettre </button>
+            <div class="form-group">
+                <label for="employee">Nom, prénom ou adresse e-mail de l'employé: </label>
+                <input type="text" id="search" name="employee" >
+                <button type="submit"> Rechercher </button>
+            </div>  
         </form>
+        
+        
+        {% if employees %}
+        <h4> L'employé recherché est bien : </h4>
+            <form id="selectEmployeeForm" method="POST" action="{% url 'dates' %}">
+                {% csrf_token %}
+                {% for employee in employees %}
+                    <div>
+                        <input type="radio" id="employee_{{ employee.id }}" name="selected_employee" value="{{ employee.id }}">
+                        <label for="employee_{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname }}</label>
+                    </div>
+                {% endfor %}
+                <button type="submit"> Sélectionner </button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        {% if selected_employee %}
+            <h3>Entrez les dates pour la recherche des interlocuteurs de  {{ selected_employee.firstname }} {{ selected_employee.lastname }} </h3>
+                <form id="datesForm" method="POST" action="{% url 'details' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="employee_id" value="{{ selected_employee.id }}">
+                        <div class="form-group">
+                            <label for="date_debut"> Date de début: </label>
+                            <input type="date" id="date_debut" name="date_debut">
+                        </div>
+                        <div class="form-group">
+                            <label for="date_fin"> Date de fin: </label>
+                            <input type="date" id="date_fin" name="date_fin">
+                        </div>
+                        <button type="submit"> Soumettre </button>
+                </form>
+
+        {% endif %}
+
+        <div>
+            {% if employees_data and date_debut and date_fin %}
+            <div class="grid">
+                <!-- Affichage des résultats de la recherche -->
+                    
+                <h3>Les employés ayant communiqué avec {{employee_id}}   entre   "{{ date_debut }}"  et "{{ date_fin }}"   sont :</h3>
+                {% for email, dates in employees_data.items %}
+                    <div class="box">
+                        <p>{{ email }}</p>
+                        <div class="box-content">
+                            <ul>
+                            {% for date in dates %}
+                                <li>{{ date }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>            
+        {% endif %}
+        </div>
 
     </div>
-    <div id="back"> <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button> </div>
+     
+
+    <div id='results' style="display: flex; justify-content: center;" >
+        <div class="back-button">
+            <button> <a href='{% url "echanges" %}'> Retour </a></button>
+        </div>
+        <div class="back-button">
+            <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
+        </div>
+
+    </div>
 
 </body>
 </html>

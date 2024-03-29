@@ -35,7 +35,6 @@
             width: 300px;
         }
 
-
         #back {
             max-width: 1000px;
             margin: auto;
@@ -47,10 +46,11 @@
 
 <body>
     <div class="container">
+        
         <div class="grid">
             <!-- Affichage des résultats de la recherche -->
-            {% if employees %}
-                <h3>Les employés ayant communiqué avec {{ prenom }} {{ nom }}   entre   "{{ date_debut }}"  et "{{ date_fin }}"   sont :</h3>
+            {% if employees_data %}
+                <h3>Les employés ayant communiqué avec ...{{employee_id.firstname}} entre   "{{ date_debut }}"  et "{{ date_fin }}"   sont :</h3>
                 {% for email, dates in employees.items %}
                     <div class="box">
                         <p>{{ email }}</p>
@@ -67,6 +67,7 @@
                 <p>Aucun résultat trouvé.</p>
             {% endif %}
         </div>
+      
     </div>
     <div id='results' style="display: flex; justify-content: center;" >
         <div class="back-button">
