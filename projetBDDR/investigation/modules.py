@@ -1,13 +1,18 @@
 import re,os
 from django.db.utils import IntegrityError
-import xml.etree.ElementTree as ET
-import datetime
-import multiprocessing
-from multiprocessing import Pool # pour optimiser le temps d'exécution du programme
 from django.db import transaction
-
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+
+from dateutil.parser import parse
+
+import xml.etree.ElementTree as ET
+from multiprocessing import Pool # pour optimiser le temps d'exécution du programme
+
+import logging
+# Configuration du logging
+logging.basicConfig(filename='errors_daily.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # Import des modèles 
 from .models import Employee,AddresseEmail,ReceiversMail,Email
@@ -40,7 +45,7 @@ def traitment_file_xml(xml_file_path):
         try:
             root= ET.fromstring(xml_content)
         except ET.ParseError:
-            print("Erreur survenue lors de l'analyse du fichier xml ")
+            logging.error("Erreur survenue lors de l'analyse du fichier xml ")
             exit()
             
         # Boucle pour parcourir les  différents éléments
@@ -68,7 +73,7 @@ def traitment_file_xml(xml_file_path):
                         ad = AddresseEmail.objects.get_or_create(addresse=e,estInterne=True, employee=emp)[0]
                             
             except Employee.DoesNotExist as e:
-                print(f" Erreur lors de la création de l'employé {lastname}: {e} ")
+                logging.error(f" Erreur lors de la création de l'employé {lastname}: {e} ")
                 
     print("    Traitement du fichier xml terminé     ")                                       
     _traitment()
@@ -88,124 +93,100 @@ def parcours_directory(directory):
     return files_list  
 
 
-#Fonction pour parcourir les fichiers
+#Fonction pour parcourir les fichiers du dossier maildir 
  
 def parcours_file(file_path):
+    emplacement = file_path
+    
     if os.path.isfile(file_path): #vérifie s'il s'agit bien d'un fichier et non d'un répertoire
         with open(file_path, 'r', encoding='latin1') as f:
             contenu = f.read()
             
             # Extraction des informations nécessaires: sender, recipient, subject, content, timestamp
             sender_match = re.search(r"From: (.+)", contenu) #ok
-            receiver_match = re.search(r"To:  (.+)", contenu)  #ok
-            cc_receiver_match = re.search(r"Cc:  (.+)", contenu)  #ok
-            bcc_receiver_match = re.search(r"Bcc:  (.+)", contenu)  #ok
+            receiver_match = re.search(r"To: (.+)", contenu)  #ok
+            cc_receiver_match = re.search(r"Cc: (.+)", contenu)  #ok
+            bcc_receiver_match = re.search(r"Bcc: (.+)", contenu)  #ok
             subject_match = re.search(r"Subject: (.+)", contenu) #ok
-            timestamp_match = re.search(r"Date: (.+?\d{4})", contenu) #ok 
-            content_start_index = contenu.find("\n\n") + 2  # Trouver l'indice de début du contenu
+            timestamp_match = re.search(r"Date: (.+)", contenu) #ok 
+            content_start_index = contenu.find("\n\n") +2 # Trouver le début du contenu, en excluant les deux premiers sauts de ligne (+2)
             content = contenu[content_start_index:]
 
             #Extraction des données
-            date = timestamp_match.group(1)
+            timestamp_str = timestamp_match.group(1)
             sender_email = sender_match.group(1)
             receivers_email = receiver_match.group(1) if receiver_match else ""
             subject = subject_match.group(1) if subject_match else ""
             cc_receivers_email = cc_receiver_match.group(1)  if cc_receiver_match else ""
-            bcc_receivers_email = bcc_receiver_match.group(1)  if bcc_receiver_match else ""
+            bcc_receivers_email = bcc_receiver_match.group(1)  if bcc_receiver_match else "" 
             
-            # Convertir le timestamp en objet datetime
-            try:
-                if date:
-                    date = datetime.datetime.strptime(date, "%a, %d %b %Y")
-            except ValueError as e:
-                print(f"Erreur lors de la conversion de la date: {e}")
-                return  
+            # Conversion du format en objet de date Django
+            date = parse(timestamp_str) if timestamp_str else None
                        
             # Nettoyage et division de la chaîne de destinataires
-            chaine1 = re.findall(r'[\w\.-]+@[\w\.-]+', receivers_email) # il s'agit ici d'une liste pouvant contenir d'autres listes
-            chaine2 = re.findall(r'[\w\.-]+@[\w\.-]+', cc_receivers_email)
-            chaine3 = re.findall(r'[\w\.-]+@[\w\.-]+', bcc_receivers_email)
+            to_emails = re.findall(r'[\w\.-]+@[\w\.-]+', receivers_email) # il s'agit ici d'une liste pouvant contenir d'autres listes
+            cc_emails = re.findall(r'[\w\.-]+@[\w\.-]+', cc_receivers_email)
+            bcc_emails = re.findall(r'[\w\.-]+@[\w\.-]+', bcc_receivers_email)
             
-            # Création des destinataires d'un email
-            to_=[]
-            cc_=[]
-            bcc_=[]
             
-            for elt1 in chaine1 :
-                if clean(elt1) :
-                    if '@enron.com' in elt1:
-                        to_.append(AddresseEmail.objects.get_or_create(addresse=elt1,estInterne=True)[0])
-                    else:
-                        to_.append(AddresseEmail.objects.get_or_create(addresse=elt1)[0])
-            
-            for elt2 in chaine2 :
-                if clean(elt2) :
-                    if '@enron.com' in elt2:
-                        cc_.append(AddresseEmail.objects.get_or_create(addresse=elt2,estInterne=True)[0])
-                    else:
-                        cc_.append(AddresseEmail.objects.get_or_create(addresse=elt2)[0])             
-          
-            print(bcc_receivers_email)  # Ajout d'une instruction d'impression pour vérifier les adresses e-mail BCC avant le nettoyage  
-            for elt3 in chaine3 :
-                if clean(elt3) :
-                    if '@enron.com' in elt3:
-                        bcc_.append(AddresseEmail.objects.get_or_create(addresse=elt3,estInterne=True)[0]) 
-                    else:
-                        bcc_.append(AddresseEmail.objects.get_or_create(addresse=elt3)[0])  
-                print("BCC Addresses After Cleaning:", [addr.addresse for addr in bcc_])  # Ajout d'une instruction d'impression pour vérifier les adresses e-mail BCC après le nettoyage          
-            
-                  
             # Enregistrement des données dans la BDD               
             try:
-                with transaction.atomic():
-                    
-                    # Vérification de l'existence de l'adresse
-                    sender = AddresseEmail.objects.filter(addresse=sender_email).first()
-                    
-                    if sender:
-                        #print(f"{sender} est déja dans la base.")
-                        pass                        
-                        
-                    else: # Si l'addresse de l'expéditeur n'existe pas, nous la créons
-                        if '@enron.com' in sender_email:
-                            sender = AddresseEmail.objects.get_or_create(addresse=sender_email,estInterne=True)[0]
-                        else:
-                            sender = AddresseEmail.objects.get_or_create(addresse=sender_email)[0]    
-                        print(f" addresse {sender_email} a été ajouté avec succès.  ")
+                with transaction.atomic():    
+                                         
+                # Si l'addresse de l'expéditeur n'existe pas, nous la créons
+                    if '@enron.com' in sender_email:
+                        sender = AddresseEmail.objects.get_or_create(addresse=sender_email,estInterne=True)[0]
+                    else:
+                        sender = AddresseEmail.objects.get_or_create(addresse=sender_email)[0]    
+                    #print(f" addresse {sender.addresse} a été ajouté avec succès.  ")
 
-                    
-                    # Création de l' Email
+                    # Dictionnaire pour stocker les adresses e-mail par type
+                    email_types = {
+                        'TO': to_emails,
+                        'CC': cc_emails,
+                        'BCC': bcc_emails
+                    }
+
+                    # Création de l'Email
                     email = Email.objects.create(
-                                date=date,
-                                sender_mail= sender,
-                                subject=subject,
-                                contenu=content
-                        )
+                        date=date,
+                        sender_mail=sender,
+                        subject=subject,
+                        content=content
+                    )
 
-                    # Ajouter les destinataires (To), (Cc) et (Bcc) à l'Email qu'on vient de créer
-                    [ReceiversMail.objects.create(email=email, addresse_email=to, type=ReceiversMail.TO) for to in to_]
-                    [ReceiversMail.objects.create(email=email, addresse_email=cc, type=ReceiversMail.CC) for cc in cc_]
-                    [ReceiversMail.objects.create(email=email, addresse_email=bcc, type=ReceiversMail.BCC) for bcc in bcc_]
-                    print(' to be continued ')
-                                    
+                    for type, emails in email_types.items():  # Boucle sur chaque type d'e-mail
+                        for email_address in emails:  # Boucle sur chaque adresse e-mail dans le groupe
+                            if clean(email_address):
+                                
+                                #Crée ou récupère l'adresse e-mail
+                                ad, _ = AddresseEmail.objects.get_or_create(addresse=email_address, estInterne=email_address.endswith('@enron.com'))
+                                
+                                # Associe les destinataires aux e-mails 
+                                ReceiversMail.objects.update_or_create(email=email, addresse_email=ad, type=type) #  update_or_create pour associer cette adresse e-mail à l'e-mail en cours de création avec le bon type.
+                                print(" Ajout des destinataires terminé   ")
+                                                 
             except Email.DoesNotExist as e:
-                print(f" Erreur lors de l'enregistrement de l'email: {email}")  
+                logging.error(f" Erreur lors de l'enregistrement de l'email: {email}")  
                  
             except IntegrityError as e:
-                #print(f"Erreur d'intégrité: {e}") 
+                logging.error(f"Erreur d'intégrité: {e}") 
                 pass
               
           
-# fonction pour traiter les fichiers en parallèle et optimiser le temps d'exécution. Actuellement le peuplement se fait en moins d'une heure
+# Fonction pour traiter les fichiers en parallèle et optimiser le temps d'exécution. Actuellement le peuplement se fait en moins d'une heure
+
 def traitment_files(files_paths):
     with Pool() as pool:
         pool.map(parcours_file,files_paths)
     print("    Traitement du dossier maildir terminé !    ") 
     
-    
+# Fonction pour valider le format des addresses email
+ 
 def clean(ad):
     try:
         validate_email(ad)
         return True  # Retourne True si l'adresse e-mail est valide
     except ValidationError:
         return False  # Retourne False si l'adresse e-mail n'est pas valide
+

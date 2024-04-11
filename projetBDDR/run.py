@@ -17,15 +17,16 @@ maildir_path = r"C:\Users\utilisateur\Desktop\BDDR\maildir"
 if __name__ == '__main__':
     debut = time.time()
     
-    #pour assurer le remplissage de notre table Employee
+    # Extraction des données du fichier XML
     traitment_file_xml(xml_file_path)
     
+    # Extraction des données du dossier maildir
     files_paths = parcours_directory(maildir_path)  
     
     traitment_files(files_paths)  # Traitement des fichiers en parallèle
     
     fin=time.time()
-    print("\nTemps d'exécution du processus : ", (fin-debut)//60,"min")
+    print("\nTemps d'exécution du processus : ", (fin-debut)//60," min")  # 159.0  min
 
         
 

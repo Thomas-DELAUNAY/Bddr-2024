@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des employés</title>
+</head>
+<body>
+
+    <div class="container">
+        <h2> Employés ayant envoyé et/ou reçu plus que {{ x }} mails dans l'intervalle de temps choisi :</h2>
+
+        <form id="CountEmailsForm" method="POST" action="{% url 'count' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="nombre_max">  maximum : </label>
+                <input type="text" id="nombre_max" name="nombre_max">
+            </div>
+
+            <div class="form-group">
+                <label for="nombre_min"> minimum : </label>
+                <input type="text" id="nombre_min" name="nombre_min">
+            </div>
+
+            <div class="form-group">
+                <label for="date_debut"> Date de début: </label>
+                <input type="date" id="date_debut" name="date_debut">
+            </div>
+
+            <div class="form-group">
+                <label for="date_fin"> Date de fin: </label>
+                <input type="date" id="date_fin" name="date_fin">
+            </div>
+            <button type="submit"> Soumettre </button>
+        </form>
+    </div>
+
+    <div class='container'>
+        {% if employes_avec_plus_de_x_mails %}
+        <h1>Détails</h1>
+     
+        <ul>  
+            <li>Employés avec plus de mails :</li>
+            {% for employe in  employes_avec_plus_de_x_mails %}
+                <li>{{ employe.firstname }} {{ employe.lastname }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+
+    <div id='results' style="display: flex; justify-content: center;" >
+        <div class="back-button">
+            <button> <a href='{% url "count" %}'> Retour à la recherche </a></button>
+        </div>
+
+        <div class="back-button">
+            <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
+        </div>
+    </div>  
+
+</body>
+</html>

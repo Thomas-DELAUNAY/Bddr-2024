@@ -30,23 +30,26 @@ class AddresseEmail(models.Model):
         
         
 class ReceiversMail(models.Model):
-    TO='TO'
-    CC='CC'
-    BCC='BCC'
+    TO='To'
+    CC='Cc'
+    BCC='Bcc'
     choices=[(TO,'To'), (CC,'Cc'),(BCC,'Bcc')]
     email = models.ForeignKey('Email',on_delete=models.CASCADE)
     addresse_email=models.ForeignKey('AddresseEmail', on_delete=models.CASCADE)
-    type = models.CharField(max_length=3, choices=choices) 
+    type = models.CharField(max_length=3, choices=choices)
     
     class Meta:
-        unique_together = ('email', 'addresse_email')
+        unique_together=['email','addresse_email','type']
+         
+    def __str__(self):
+        return f"{self.email} - {self.addresse_email} - {self.type}"
         
 class Email(models.Model):
     date = models.DateField()
     sender_mail = models.ForeignKey('AddresseEmail',null=True,default=None, on_delete=models.CASCADE, related_name='sent_email')
     subject = models.CharField(max_length=200, default=None)
-    contenu = models.TextField(default='')
+    content = models.TextField(default='')
     receivers = models.ManyToManyField('AddresseEmail', through='ReceiversMail', related_name='received_emails')
         
-    
-    
+    class Meta: 
+        unique_together = ['id']

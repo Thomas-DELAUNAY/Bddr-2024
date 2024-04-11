@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Echange entre employés </title>
+    <title> Echanges entre employés </title>
     <style>
+
         body {
             margin: 0;
             padding: 0;
@@ -51,7 +52,8 @@
 
 <body>
     <div class="container">
-        <h2>Afin de savoir quel employé a échangé des e-mails avec quel autre, veuillez fournir les informations ci-dessous: </h2>
+        <h2> Afin de savoir quel employé a échangé des e-mails avec quel autre, veuillez fournir les informations ci-dessous: </h2>
+        
         <form id="communicationForm" method="POST" action="{% url 'echanges' %}">
             {% csrf_token %}
             <div class="form-group">
@@ -74,6 +76,9 @@
                 {% endfor %}
                 <button type="submit"> Sélectionner </button>
             </form>
+        {% else %}
+            <p> {{ error_message }} </p>
+
         {% endif %}
     </div>
 
@@ -96,35 +101,10 @@
 
         {% endif %}
 
-        <div>
-            {% if employees_data and date_debut and date_fin %}
-            <div class="grid">
-                <!-- Affichage des résultats de la recherche -->
-                    
-                <h3>Les employés ayant communiqué avec {{employee_id}}   entre   "{{ date_debut }}"  et "{{ date_fin }}"   sont :</h3>
-                {% for email, dates in employees_data.items %}
-                    <div class="box">
-                        <p>{{ email }}</p>
-                        <div class="box-content">
-                            <ul>
-                            {% for date in dates %}
-                                <li>{{ date }}</li>
-                            {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>            
-        {% endif %}
-        </div>
-
     </div>
      
 
     <div id='results' style="display: flex; justify-content: center;" >
-        <div class="back-button">
-            <button> <a href='{% url "echanges" %}'> Retour </a></button>
-        </div>
         <div class="back-button">
             <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
         </div>

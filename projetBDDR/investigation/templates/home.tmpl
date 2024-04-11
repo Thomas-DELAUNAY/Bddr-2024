@@ -12,7 +12,7 @@
             font-family: Arial, sans-serif; 
         }
         .container1 {
-            max-width: 1000px; 
+            max-width: 100%; 
             margin: auto; 
             padding: 10px; 
             text-align: start;
@@ -22,17 +22,17 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             -ms-grid-row-align: center;
+            grid-gap: 10px; /* Espacement entre les éléments */
         }
-
         .container {
-            max-width: 1000px; 
+            max-width: 100%; 
             margin: auto; 
             padding: 10px; 
             text-align: center;
         }
         img {
             width: 100%;
-            height: 300px; 
+            height: 400px; 
             display: block; 
             margin-bottom: 30px; 
         }
@@ -42,36 +42,35 @@
     <div class="container">
         <div>
             <img src='https://www.ege.fr/sites/ege.fr/files/images/cyberinvestigation.jpg' alt="hey">
-            <h1> Bienvenue </h1>
         </div>
     </div>
 
     <div class="container1">
+        <p>Pour montrer le fonctionnement de notre application, nous l'utiliserons sur des données réelles sur l'affaire Enron au debut des années 2000. </p>
         <p> Avec cette application, vous avez la possibilité d'effectuer les tâches suivantes:</p>
         <div class="grid-container">
             <div class="grid-item">   
-        <!-- <ul> -->
             <a href="{% url 'recherche' %}">Effectuer la recherche d'un employé particulier de l'entreprise</a>
             </div>
             <div class="grid-item"> 
-                <a href="">Rechercher parmi les employés ceux ayant reçu et/ou envoyé le plus de mails sur une période précise</a>
+                <a href="{% url 'count' %}">Rechercher parmi les employés ceux ayant reçu et/ou envoyé le plus de mails sur une période précise</a>
             </div>
             <div class="grid-item"> 
-                <a href="{%url 'echanges' %}">Afficher les correspondances d'un employé sur une période</a>
+                <a href="{% url 'details' %}">Afficher les correspondances d'un employé sur une période</a>
             </div>
             <div class="grid-item"> 
-                <a href="">Afficher les couples d'employés ayant commnuniqué dans un intervalle de temps choisi</a>
+                <a href=""> Afficher les couples d'employés ayant commnuniqué dans un intervalle de temps choisi</a>
             </div>
             <div class="grid-item"> 
-                <a href="">Afficher les jours ayant connu un grand nombre d'échange de mails.  Avec la possibilité de différencier les échanges  entre internes de ceux des internes-externes</a>
+                <a href=""> Afficher les jours ayant connu un grand nombre d'échange de mails.  Avec la possibilité de différencier les échanges  entre internes de ceux des internes-externes</a>
             </div>
             <div class="grid-item"> 
-                <a href="">Rechercher des mails selon un liste de mots fournis</a>
+                <a href=""> Rechercher des mails selon un liste de mots fournis</a>
             </div>
             <div class="grid-item"> 
-                <a href="">Visualisation du contenu d'une conversation, ainsi que des personnes ayant eu des discussions</a>
+                <a href=""> Visualisation du contenu d'une conversation, ainsi que des personnes ayant eu des discussions</a>
             </div>
-       <!-- </ul>-->
+ 
     </div> 
 </body>
 </html>

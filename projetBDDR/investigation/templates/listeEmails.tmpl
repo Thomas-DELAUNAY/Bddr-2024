@@ -36,21 +36,23 @@
 
 <body> 
   <div class='container'>
-    <h1>Listes des employés d'Enron</h1>
+    <h1>Listes des emails echangés </h1>
 
     {% if page_obj %}
       <table class="mon_tableau">
         <th>
-          <td><strong> Id email </strong></td>
-          <td><strong>Interne/Externe  </strong></td>
-          <td><strong> Id addresse email </strong></td>
+          <td><strong> date </strong></td>
+          <td><strong>sender_mail_id </strong></td>
+          <td><strong> Sujet </strong></td>
+          <td> contenu </td>
         </th>
       {% for e in page_obj %}
         <tr>
           <td>{{ e.id}} </td>
-          <td>{{ e.email.id}} </td>
-          <td>{{ e.type}} </td>
-          <td>{{ e.addresse_email.addresse}} </td>
+          <td>{{ e.date}} </td>
+          <td>{{ e.sender_mail.addresse}} </td>
+          <td>{{ e.subject}} </td>
+          <td>{{ e.contenu}} </td>
         </tr>
       {% endfor %}
       </table>

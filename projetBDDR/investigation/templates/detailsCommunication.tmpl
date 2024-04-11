@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Détails des échanges</title>
+    <title> Correspondants </title>
     <style>
         body {
             margin: 0;
@@ -12,7 +12,7 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 100%;
             margin: auto;
             padding: 10px;
             text-align: start;
@@ -27,13 +27,32 @@
 
         /* Style des boîtes */
         .box {
-            background-color: #f0f0f0;
+          
             padding: 5px;
             margin : 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
-            width: 300px;
+            width: auto;
         }
+
+        .box-content {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .box-content ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .box-content ul li {
+            margin-bottom: 5px;
+        }
+
 
         #back {
             max-width: 1000px;
@@ -45,30 +64,27 @@
 </head>
 
 <body>
+    <title> Listes des correspondances </title>
+
     <div class="container">
-        
+        {% if employees_data %}
         <div class="grid">
-            <!-- Affichage des résultats de la recherche -->
-            {% if employees_data %}
-                <h3>Les employés ayant communiqué avec ...{{employee_id.firstname}} entre   "{{ date_debut }}"  et "{{ date_fin }}"   sont :</h3>
-                {% for email, dates in employees.items %}
-                    <div class="box">
-                        <p>{{ email }}</p>
-                        <div class="box-content">
-                            <ul>
-                                {% for date in dates %}
-                                    <li>{{ date }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
+            <p>Les addresses email avec lesquelles <strong>{{employee_id.firstname}} {{employee_id.lastname}}</strong> a échangé  entre  <strong>{{ date_debut }}</strong>  et  <strong>{{ date_fin }}</strong>  sont :</p>
+            <div class="box">
+                {% for addresse in employees_data %}
+                <div class="box-content">
+                    <ul> 
+                        <li>{{ addresse.0 }} - {{ addresse.1 }}  - {{ addresse.2 }}  </li>
+                    </ul>
+                </div>
                 {% endfor %}
-            {% else %}
-                <p>Aucun résultat trouvé.</p>
-            {% endif %}
-        </div>
-      
+            </div>
+        </div>      
+        {% endif %}
+
+
     </div>
+
     <div id='results' style="display: flex; justify-content: center;" >
         <div class="back-button">
             <button> <a href='{% url "echanges" %}'> Retour </a></button>
