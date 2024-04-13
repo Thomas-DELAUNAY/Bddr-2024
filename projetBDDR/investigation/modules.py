@@ -104,9 +104,9 @@ def parcours_file(file_path):
             
             # Extraction des informations nécessaires: sender, recipient, subject, content, timestamp
             sender_match = re.search(r"From: (.+)", contenu) #ok
-            receiver_match = re.search(r"To: (.+)", contenu)  #ok
-            cc_receiver_match = re.search(r"Cc: (.+)", contenu)  #ok
-            bcc_receiver_match = re.search(r"Bcc: (.+)", contenu)  #ok
+            receiver_match = re.search(r"To: ((?:.+\n)+)(?=Subject)", contenu)  #ok
+            cc_receiver_match = re.search(r"Cc: ((?:.+\n)+)(?=Mime-Version)", contenu)  #ok
+            bcc_receiver_match = re.search(r"Bcc: ((?:.+\n)+)(?=X-From)", contenu)  #ok
             subject_match = re.search(r"Subject: (.+)", contenu) #ok
             timestamp_match = re.search(r"Date: (.+)", contenu) #ok 
             content_start_index = contenu.find("\n\n") +2 # Trouver le début du contenu, en excluant les deux premiers sauts de ligne (+2)
