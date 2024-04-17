@@ -65,24 +65,21 @@
         
         
         {% if employees %}
-        <h4> L'employé recherché est bien : </h4>
-            <form id="selectEmployeeForm" method="POST" action="{% url 'dates' %}">
-                {% csrf_token %}
-                {% for employee in employees %}
-                    <div>
-                        <input type="radio" id="employee_{{ employee.id }}" name="selected_employee" value="{{ employee.id }}">
-                        <label for="employee_{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname }}</label>
-                    </div>
-                {% endfor %}
-                <button type="submit"> Sélectionner </button>
-            </form>
+            <h4> L'employé recherché est bien : </h4>
+                <form id="selectEmployeeForm" method="POST" action="{% url 'dates' %}">
+                    {% csrf_token %}
+                    {% for employee in employees %}
+                        <div>
+                            <input type="radio" id="employee_{{ employee.id }}" name="selected_employee" value="{{ employee.id }}">
+                            <label for="employee_{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname }}</label>
+                        </div>
+                    {% endfor %}
+                    <button type="submit"> Sélectionner </button>
+                </form>
         {% else %}
             <p> {{ error_message }} </p>
-
         {% endif %}
-    </div>
-
-    <div class="container">
+ 
         {% if selected_employee %}
             <h3>Entrez les dates pour la recherche des interlocuteurs de  {{ selected_employee.firstname }} {{ selected_employee.lastname }} </h3>
                 <form id="datesForm" method="POST" action="{% url 'details' %}">

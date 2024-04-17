@@ -77,11 +77,10 @@ def employees_communication(request):
                 
                 if employee_id is not None:
                 
-                        employee = Employee.objects.get(pk=employee_id)
-                        print(employee)
+                    employee = Employee.objects.get(pk=employee_id)
                         
                         # Requete SQL
-                        query="""
+                    query="""
                             -- Combine les adresses des e-mails envoyés et reçus par cet employé
                             
                             -- Toutes les addresses emails des messages que l'employé a envoyé
@@ -109,16 +108,16 @@ def employees_communication(request):
                         """
 
                         # Exécute la requête
-                        with connection.cursor() as cursor:
-                            cursor.execute(query, ['%' + employee.lastname + '%', '%' + employee.firstname + '%', 
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, ['%' + employee.lastname + '%', '%' + employee.firstname + '%', 
                                                 '%' + employee.lastname + '%', '%' + employee.firstname + '%',
                                                 '%'+ date_debut + '%' , '%' + date_fin + '%'])
-                            employees = cursor.fetchall()
+                        employees = cursor.fetchall()
                             
                         # Récupérer toutes les adresses e-mails où l'employé est destinataire en TO, CC ou BCC
 
                         
-                        return render(request, 'detailsCommunication.tmpl', {'employees_data': employees,
+                    return render(request, 'detailsCommunication.tmpl', {'employees_data': employees,
                                                                             'form': form,
                                                                             'date_debut':date_debut,
                                                                             'date_fin':date_fin,

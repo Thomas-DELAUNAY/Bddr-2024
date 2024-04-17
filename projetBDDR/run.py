@@ -21,12 +21,11 @@ if __name__ == '__main__':
     traitment_file_xml(xml_file_path)
     
     # Extraction des données du dossier maildir
-    files_paths = parcours_directory(maildir_path)  
-    
-    traitment_files(files_paths)  # Traitement des fichiers en parallèle
+    for file_path  in parcours_directory(maildir_path):
+        parcours_file(file_path)  
     
     fin=time.time()
-    print("\nTemps d'exécution du processus : ", (fin-debut)//60," min")  # 159.0  min
+    print("\nTemps d'exécution du processus : ", (fin-debut)//60," min") 
 
         
 
