@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informations</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, sans-serif;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: start;
+        }
+
+        /* Créez une grille pour aligner les boîtes */
+        .grid {
+            display: flexbox;
+            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            grid-gap: 10px;
+        }
+
+        /* Style des boîtes */
+        .box {
+          
+            padding: 5px;
+            margin : 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: auto;
+        }
+
+        .box-content {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .box-content ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .box-content ul li {
+            margin-bottom: 5px;
+        }
+
+        #back {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: center;
+            
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        {% if employees %}
+        <h4 style="text-align: center;"> Résultats de la recherche</h4>
+        <div class="grid">
+            
+                {% for employee in employees %}
+                    <div class="box">
+                        <div class="box-content">
+                            <p>Nom : {{ employee.1 }}</p>
+                            <p>Prénom : {{ employee.2 }}</p>
+                            <p>Catégorie : {{ employee.3 }}</p>
+                            <p>Adresses e-mail :
+                                <ul>
+                                    {% for e in employee.4 %}
+                                        <li>{{ e }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div id='results' style="display: flex; justify-content: center; ">
+        <div class="back-button">
+            <button><a href='{% url "recherche" %}'>Retour</a></button>
+        </div>
+        <div class="back-button">
+            <button><a href='{% url "index" %}'>Retour à la page d'accueil</a></button>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head> <title>Employés Enron</title>
+  <style>   
+    table.mon_tableau  {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    table.mon_tableau td, table.mon_tableau th {
+       border: 1px solid #555;
+       padding: 8px;
+       font-family: "Arial", sans-serif;
+       font-size: 14px;
+    }
+    table.mon_tableau th {
+       background-color: whitesmoke;
+    }
+    table.mon_tableau tr:nth-child(even)  {background-color: #f7e5bc;}
+    table.mon_tableau tr:nth-child(odd) {background-color: #f5cb6c;}
+
+    body {
+          margin: 0;
+          padding: 0;
+          font-family: Helvetica, sans-serif;
+      }
+
+    .container {
+          max-width: 100%;
+          margin: 20px;
+          padding: 10px;
+          text-align: start;
+      }
+  
+  </style>
+</head>
+
+<body> 
+  <div class='container'>
+    <h1>Listes des employés d'Enron</h1>
+
+    {% if page_obj %}
+      <table class="mon_tableau">
+        <th>
+          <td><strong> Id email </strong></td>
+          <td><strong>Interne/Externe  </strong></td>
+          <td><strong> Id addresse email </strong></td>
+        </th>
+      {% for e in page_obj %}
+        <tr>
+          <td>{{ e.id}} </td>
+          <td>{{ e.email.id}} </td>
+          <td>{{ e.type}} </td>
+          <td>{{ e.addresse_email.addresse}} </td>
+        </tr>
+      {% endfor %}
+      </table>
+
+    <div class='pagination' style="display: flex; justify-content: center; margin: 20px">
+        <span class"step-links">
+          {% if page_obj.has_previous %}
+            <a href="?page=1"> &laquo; first </a>
+            <a href="?page={{
+              page_obj*.previous_page_number}}"> previous </a>
+          {% endif %}
+
+          <span class="current"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+        </span>   
+    </div>
+
+     
+    {% else %}
+    {% endif %}
+
+
+  </div>
+
+</body>
+</html>
