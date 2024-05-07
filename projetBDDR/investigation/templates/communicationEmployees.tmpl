@@ -52,9 +52,9 @@
 
 <body>
     <div class="container">
-        <h2> Afin de savoir quel employé a échangé des e-mails avec quel autre, veuillez fournir les informations ci-dessous: </h2>
+        <h3> Afin de savoir quel employé a échangé des e-mails avec quel autre, veuillez fournir les informations ci-dessous: </h3>
         
-        <form id="communicationForm" method="POST" action="{% url 'echanges' %}">
+        <form id="communicationForm" method="POST" action="{% url 'rechercheEmployee' %}">
             {% csrf_token %}
             <div class="form-group">
                 <label for="employee">Nom, prénom ou adresse e-mail de l'employé: </label>
@@ -62,7 +62,6 @@
                 <button type="submit"> Rechercher </button>
             </div>  
         </form>
-        
         
         {% if employees %}
             <h4> L'employé recherché est bien : </h4>
@@ -95,7 +94,6 @@
                         </div>
                         <button type="submit"> Soumettre </button>
                 </form>
-
         {% endif %}
 
     </div>

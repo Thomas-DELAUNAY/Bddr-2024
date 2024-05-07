@@ -1,11 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.db import connection
+from django.http import HttpResponse
 
-from .models import Employee,AddresseEmail,Email, ReceiversMail
+from django.views.generic import ListView
+
+from .models import Employee,AddresseEmail,Email, ReceiversMail, CoupleCommunication
 from .forms import * 
 
+import logging
+
+# Configuration du logging
+logging.basicConfig(filename='errors_views.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Create your views here.
 
@@ -27,11 +35,12 @@ def listeEmails(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)  
     return render(request, 'listeEmails.tmpl',{ 'page_obj' : page_obj})   
-     
+ 
+#### QUESTION 1    
+
 def details_about_employee(request):
     if request.method == 'POST':
         form = EmployeeSearchForm(request.POST)
-        
         if form.is_valid():
             # Récupère les données du formulaire
             data = form.cleaned_data['employee_name_or_email']
@@ -62,62 +71,182 @@ def details_about_employee(request):
     return render(request, 'rechercheEmployee.tmpl', {'form': form})
 
 
-#Fonction pour obtenir les employés ayant échangé avec un autre en particulier, et sur quelle période
+###### QUESTION 2
 
+def count_mails(request):
+    """ Fonction pour récupérer les employés ayant recu et/ou envoyé plus de (resp. moins de) x mails par rapport aux autres """
+    if request.method == 'POST':
+        date_debut = request.POST.get('date_debut')
+        date_fin = request.POST.get('date_fin')
+        nombre_min = request.POST.get('nombre_min')
+        nombre_max = request.POST.get('nombre_max')
+        
+        try: 
+            
+            nombre_max = nombre_max if nombre_max  else 0  
+            nombre_min = nombre_min if nombre_min  else 0 
+            
+            # Compte les mails envoyés et reçus par chaque employé
+            query = """
+                SELECT addresse, 
+                    SUM(total_mails_envoyes_interne) AS total_mails_envoyes_interne,
+                    SUM(total_mails_envoyes_externe) AS total_mails_envoyes_externe
+                FROM (
+                    SELECT a.addresse, 
+                        COUNT(DISTINCT e.id) AS total_mails_envoyes_interne,
+                        0 AS total_mails_envoyes_externe
+                    FROM investigation_addresseemail a
+                    INNER JOIN investigation_email e ON a.id = e.sender_mail_id
+                    WHERE a.estInterne = True
+                        AND e.date BETWEEN %s AND %s
+                    GROUP BY a.addresse
+                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
+                    
+                    UNION ALL
+                    
+                    SELECT a.addresse, 
+                        0 AS total_mails_envoyes_interne,
+                        COUNT(DISTINCT e.id) AS total_mails_envoyes_externe
+                    FROM investigation_addresseemail a
+                    INNER JOIN investigation_email e ON a.id = e.sender_mail_id
+                    WHERE a.estInterne = False
+                        AND e.date BETWEEN %s AND %s
+                    GROUP BY a.addresse
+                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
+                ) AS combined_results
+                GROUP BY addresse
+                ORDER BY total_mails_envoyes_interne DESC
+            """
+            
+            query1 = """
+                SELECT addresse, 
+                    SUM(total_mails_recus_interne) AS total_mails_recus_interne,
+                    SUM(total_mails_recus_externe) AS total_mails_recus_externe
+                FROM (
+                    SELECT a.addresse, 
+                        COUNT(DISTINCT e.id) AS total_mails_recus_interne,
+                        0 AS total_mails_recus_externe
+                    FROM investigation_addresseemail a
+                    INNER JOIN investigation_receiversmail r ON a.id = r.addresse_email_id
+                    INNER JOIN investigation_receiversmail_email re ON re.receiversmail_id  = r.id
+                    INNER JOIN investigation_email e ON  e.id = re.email_id
+                    WHERE a.estInterne = True
+                        AND e.date BETWEEN %s AND %s
+                    GROUP BY a.addresse
+                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
+                      
+                    UNION ALL
+                    
+                    SELECT a.addresse, 
+                        0 AS total_mails_recus_interne,
+                        COUNT(DISTINCT e.id) AS total_mails_recus_externe
+                    FROM investigation_addresseemail a
+                    INNER JOIN investigation_receiversmail r ON a.id = r.addresse_email_id
+                    INNER JOIN investigation_receiversmail_email re ON re.receiversmail_id  = r.id
+                    INNER JOIN investigation_email e ON  e.id = re.email_id
+                    WHERE a.estInterne = False
+                        AND e.date BETWEEN %s AND %s
+                    GROUP BY a.addresse
+                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
+                ) AS received_results
+                GROUP BY addresse
+                ORDER BY total_mails_recus_interne DESC
+            """
+            
+            # Exécute la requête
+            with connection.cursor() as cursor:
+                cursor.execute(query, [date_debut, date_fin, nombre_min, nombre_max,
+                                       date_debut, date_fin, nombre_min, nombre_max])
+                employes_avec_plus_de_x_mails = cursor.fetchall()
+                
+                cursor.execute(query1, [date_debut, date_fin, nombre_min, nombre_max,
+                                        date_debut, date_fin, nombre_min, nombre_max])
+                employes_avec_plus_de_x = cursor.fetchall()                     
+
+            
+            return render(request, 'detailsCountEmails.tmpl', {'date_debut':date_debut,
+                                                           'date_fin':date_fin, 
+                                                           'nombre_max': nombre_max,
+                                                           'nombre_min':nombre_min,
+                                                           'plus_de_x_mails_envoyes': employes_avec_plus_de_x_mails,
+                                                           'plus_de_x_mails_recus': employes_avec_plus_de_x})
+        except Exception as e:
+            print(f" Erreur de type : \n {e}")
+            return HttpResponse("Une erreur s'est produite lors du traitement de votre demande.")
+    else: 
+        print(" Erreur Erreur Erreur ")
+        return render(request, 'countEmails.tmpl')
+
+
+########   QUESTION 3
+
+def search_employee(request):
+    if request.method == 'POST':
+        employee= request.POST.get('employee', '')
+        try: 
+            # Recherche tous les employés correspondant à la requête
+            employees = Employee.objects.filter(
+                Q(lastname__icontains=employee) |
+                Q(firstname__icontains=employee) |
+                Q(addresseemail__addresse__icontains=employee)
+            ).distinct()
+            return render(request, 'communicationEmployees.tmpl', {'employees': employees,
+                                                                   'error_message': 'Aucun employé correspondant trouvé.'})
+        
+        except Exception as e:
+            print(f" Erreur détectée : {e}")
+    else :
+        return render(request, 'rechercheEmployee.tmpl', {'error_message': 'Aucun employé correspondant trouvé.'})
+ 
+def dates(request):
+    if request.method == 'POST':
+        selected_employee_id = request.POST.get('selected_employee')
+        try:
+            selected_employee = Employee.objects.get(id=selected_employee_id)
+            return render(request, 'communicationEmployees.tmpl', {'selected_employee': selected_employee})
+        
+        except Employee.DoesNotExist:
+            messages.error(request,"erreur aucun employé trouvé")
+    else: # Si la méthode de la requête n'est pas POST
+        return render(request, 'communicationEmployees.tmpl')
+            
 def employees_communication(request):
-    
+    """ Fonction pour obtenir les employés ayant échangé avec un autre en particulier, et sur quelle période """
     if request.method == 'POST':
         employee_id = request.POST.get('employee_id', None)
-
         form = CommunicationSearchForm(request.POST)
+        
         try:
             if form.is_valid():
-                date_debut = form.cleaned_data['date_debut'].strftime('%Y-%m-%d')
-                date_fin = form.cleaned_data['date_fin'].strftime('%Y-%m-%d')
+                date_debut = form.cleaned_data['date_debut'].strftime('%d/%m/%Y') 
+                date_fin = form.cleaned_data['date_fin'].strftime('%d/%m/%Y') 
                 
                 if employee_id is not None:
-                
                     employee = Employee.objects.get(pk=employee_id)
-                        
-                        # Requete SQL
+                     
+                    # Requete SQL
+                    
                     query="""
-                            -- Combine les adresses des e-mails envoyés et reçus par cet employé
-                            
-                            -- Toutes les addresses emails des messages que l'employé a envoyé
-                            SELECT DISTINCT em.date, rm.type, ae.addresse
-                            FROM investigation_addresseemail ae
-                            JOIN investigation_email em ON ae.id = em.sender_mail_id
-                            JOIN investigation_receiversmail rm ON em.id = rm.email_id
-                            JOIN investigation_addresseemail recipient_ae ON rm.addresse_email_id = recipient_ae.id
-                            JOIN investigation_employee recipient_e ON recipient_ae.employee_id = recipient_e.id
-                            JOIN investigation_employee sender_e ON ae.employee_id = sender_e.id
-                            WHERE sender_e.lastname ILIKE %s AND sender_e.firstname ILIKE %s
-                            
-                            UNION
-                            
-                            
-                            -- Ici on a tous les destinataires des emails envoyés par 
-                            SELECT  DISTINCT  em.date, rm.type, ae.addresse
-                            FROM investigation_addresseemail ae
-                            JOIN investigation_receiversmail rm ON ae.id = rm.addresse_email_id
-                            JOIN investigation_email em ON rm.email_id = em.id
-                            JOIN investigation_addresseemail sender ON em.sender_mail_id = sender.id
-                            JOIN investigation_employee e ON sender.employee_id = e.id
-                            WHERE e.lastname NOT ILIKE %s AND e.firstname  NOT ILIKE %s
-                            AND em.date >= %s AND em.date <= %s
+                        SELECT DISTINCT rm.type, ae.addresse, e.date
+                        FROM investigation_receiversmail rm
+                        INNER JOIN investigation_receiversmail_email re ON re.receiversmail_id = rm.id
+                        INNER JOIN investigation_email e ON e.id = re.email_id 
+                        INNER JOIN investigation_addresseemail ae ON ae.id = e.sender_mail_id
+                        WHERE e.date BETWEEN %s AND %s
+                        AND e.sender_mail_id NOT IN (
+                            SELECT a.id
+                            FROM investigation_addresseemail a
+                            WHERE a.employee_id = %s
+                        )
                         """
-
-                        # Exécute la requête
-                    with connection.cursor() as cursor:
-                        cursor.execute(query, ['%' + employee.lastname + '%', '%' + employee.firstname + '%', 
-                                                '%' + employee.lastname + '%', '%' + employee.firstname + '%',
-                                                '%'+ date_debut + '%' , '%' + date_fin + '%'])
-                        employees = cursor.fetchall()
-                            
-                        # Récupérer toutes les adresses e-mails où l'employé est destinataire en TO, CC ou BCC
-
                         
-                    return render(request, 'detailsCommunication.tmpl', {'employees_data': employees,
+                    # Exécute la requête
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, [date_debut, date_fin, employee.id])
+                        employees = cursor.fetchall()
+                   
+                        
+                    return render(request, 'detailsCommunication.tmpl', {'employees': employees,
                                                                             'form': form,
                                                                             'date_debut':date_debut,
                                                                             'date_fin':date_fin,
@@ -125,111 +254,127 @@ def employees_communication(request):
                                                                             
                                                                             })
             else:
-                print("problème de formulaire ")    
+                messages.error(request, "Le formulaire n'est pas valide.")
+                logging.error("Problème avec le formulaire : %s", form.errors)
                 
         except Exception as e:
-            print(f"Une erreur s'est produite lors de l'exécution de la requête : {e}")         
+            logging.error(f"Une erreur s'est produite lors de l'exécution de la requête : {e}")  
+            return render(request, 'communicationEmployees.tmpl')       
     else:
         form = CommunicationSearchForm()
     return render(request, 'communicationEmployees.tmpl', {'form': form})   
 
 
+###### QUESTION 4
 
-def search_employee(request):
-    employees = set()
+def couple_employees_ayant_communique(request):
     if request.method == 'POST':
-        employee= request.POST.get('employee', '')
-        
-        try: 
-
-            # Recherchez tous les employés correspondant à la requête
-            employees = Employee.objects.filter(
-                Q(lastname__icontains=employee) |
-                Q(firstname__icontains=employee) |
-                Q(addresseemail__addresse__icontains=employee)
-            ).distinct()
-            
-            return render(request, 'communicationEmployees.tmpl', {'employees': employees})
-        except Exception as e:
-            print(f" Erreur détectée : {e}")
-        
-    else :
-        return render(request, 'rechercheEmployee.tmpl', {'error_message': 'Aucun employé correspondant trouvé.'})
-            
-
-
-def dates(request):
-    if request.method == 'POST':
-        selected_employee_id = request.POST.get('selected_employee')
-
-        try:
-            selected_employee = Employee.objects.get(id=selected_employee_id)
-            context = {
-                'selected_employee': selected_employee
-            }
-            return render(request, 'communicationEmployees.tmpl', context)
-        except Employee.DoesNotExist:
-            print("erreur aucun employé trouvé")
-    # Si la méthode de la requête n'est pas POST, renvoyer simplement un rendu de template vide
-    return render(request, 'communicationEmployees.tmpl')
- 
- 
-# Fonction pour récupérer les employés ayant recu et/ou envoyé plus de (resp.moins de) mails que les autres.
-
-def count_mails(request):
-    if request.method == 'POST':
-        form = CountEmailsForm(request.POST)
-
+        form = CoupleEmployeesForm(request.POST)
         if form.is_valid():
-            date_debut = request.POST.get('date_debut', None)
-            date_fin = request.POST.get('date_fin', None)
-            nombre_min = request.POST.get('nombre_min', None)
-            nombre_max = request.POST.get('nombre_max', None)
+            date_debut = form.cleaned_data.get('date_debut').strftime('%Y-%m-%d')
+            date_fin = form.cleaned_data.get('date_fin').strftime('%Y-%m-%d')
+            seuil = form.cleaned_data.get('seuil')
+            nombre_max = form.cleaned_data.get('nombre_max', None)
+            
+            try:
+                if nombre_max :
+                    query = """
+                        SELECT 
+                            a1.addresse AS employee_id_1,
+                            a2.addresse AS employee_id_2,
+                            COUNT(*) AS total_mails_echanges
+                        FROM 
+                            investigation_addresseemail a1
+                        INNER JOIN 
+                            investigation_email e1 ON a1.id = e1.sender_mail_id
+                        INNER JOIN
+                            investigation_receiversmail_email re ON re.email_id = e1.id
+                        INNER JOIN
+                            investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                        INNER JOIN 
+                            investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                        WHERE 
+                            e1.date BETWEEN %s AND %s
+                            AND a1.employee_id < a2.employee_id
+                        GROUP BY 
+                            a1.addresse, a2.addresse
+                        HAVING
+                            COUNT(*) <= %s
+                        ORDER BY total_mails_echanges DESC
+                    """
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, [date_debut, date_fin, nombre_max])
+                        couple_employees_ayant_communique = cursor.fetchall()
+                    
+                else:
+                    query = """
+                        SELECT 
+                            a1.addresse AS employee_id_1,
+                            a2.addresse AS employee_id_2,
+                            COUNT(*) AS total_mails_echanges
+                        FROM 
+                            investigation_addresseemail a1
+                        INNER JOIN 
+                            investigation_email e1 ON a1.id = e1.sender_mail_id
+                        INNER JOIN
+                            investigation_receiversmail_email re ON re.email_id = e1.id
+                        INNER JOIN
+                            investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                        INNER JOIN 
+                            investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                        WHERE 
+                            e1.date BETWEEN %s AND %s
+                            AND a1.employee_id < a2.employee_id
+                        GROUP BY 
+                            a1.addresse, a2.addresse
+                        
+                        ORDER BY total_mails_echanges DESC
+                    """
+                    
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, [date_debut, date_fin])
+                        couple_employees_ayant_communique = cursor.fetchall()
 
-            # Compter les mails envoyés et reçus par chaque employé
-            employes_avec_plus_de_x_mails = Employee.objects.annotate(
-                total_mails_envoyes=Count('sent_emails', distinct=True),
-                total_mails_recus=Count('received_emails', distinct=True)
-            ).filter(
-                total_mails_envoyes__gt=nombre_max,
-                total_mails_recus__gt=nombre_max,
-                total_mails_envoyes__lt=nombre_min,
-                total_mails_recus__lt=nombre_min,
-                sent_emails__date__range=(date_debut, date_fin),
-                received_emails__date__range=(date_debut, date_fin),
-            )
+                # Rediriger vers la vue CoupleCommunicationView avec les données
+                request.session['Couples'] = couple_employees_ayant_communique
+                request.session['seuil'] = seuil
+                return redirect('detailsCouples')
 
-            employes_avec_moins_de_x_mails = Employee.objects.annotate(
-                total_mails_envoyes=Count('sent_emails', distinct=True),
-                total_mails_recus=Count('received_emails', distinct=True)
-            ).filter(
-                total_mails_envoyes__lt=nombre_max,
-                total_mails_recus__lt=nombre_max,
-                total_mails_envoyes__gt=nombre_min,
-                total_mails_recus__gt=nombre_min,
-                sent_emails__date__range=(date_debut, date_fin),
-                received_emails__date__range=(date_debut, date_fin),
-            )
-
-            return render(request, 'detailsCountEmails.tmpl', {
-                'form': form,
-                'employes_avec_plus_de_x_mails': employes_avec_plus_de_x_mails,
-                'employes_avec_moins_de_x_mails': employes_avec_moins_de_x_mails,
-                'date_debut': date_debut,
-                'date_fin': date_fin,
-                'nombre_max': nombre_max,
-                'nombre_min': nombre_min
-            })
+            except Exception as e:
+                logging.error(f"Erreur survenue : {e}")
+                          
         else:
-            print("le format du formulaire n'est pas valide ")
+            messages.error(request, "Le formulaire n'est pas valide.")
+            logging.error("Problème avec le formulaire : %s", form.errors)
     else:
-        form = CountEmailsForm()
-    return render(request, 'countEmails.tmpl', {'form': form})
+        form = CoupleEmployeesForm()
+    return render(request, 'coupleEmployees.tmpl', {'form': form})
 
-def dates2(request):
-    
-    
-    
-    return render(request, 'detailsCountEmails.tmpl')
+class CoupleCommunicationView(ListView):
+    """ Cette classe gère la pagination  dans mon template, les méthodes sont appelées directement """
+    model = CoupleCommunication
+    template_name = 'detailsCoupleEmployees.tmpl'
+    context_object_name = 'Couples'
 
- 
+    def get_queryset(self):
+        """ Cette methode transforme le résultat de ma requete SQL en queryset, utilisable par cette classe"""
+        couples = self.request.session.get('Couples', [])
+        queryset = []
+        for couple in couples:
+            employee_addresse_1, employee_addresse_2, total_mails_echanges = couple
+            couple_instance = CoupleCommunication(employee_addresse_1=employee_addresse_1, employee_addresse_2=employee_addresse_2, total_mails_echanges=total_mails_echanges)
+            queryset.append(couple_instance)  
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        """ Gère les objets de type paginator """
+        context = super().get_context_data(**kwargs)
+        context['page_obj'] = context['paginator'].page(context['page_obj'].number)  # Utilisez votre propre nom de variable de contexte ici
+        return context
+    
+    def get_paginate_by(self, queryset):  # Utilisez le seuil stocké dans la session pour la pagination
+        seuil = self.request.session.get('seuil')
+        return seuil if seuil else 10  # Valeur par défaut si le seuil n'est pas défini dans la session
+
+
+###### QUESTION 5

@@ -53,13 +53,13 @@
             <a href="{% url 'recherche' %}">Effectuer la recherche d'un employé particulier de l'entreprise</a>
             </div>
             <div class="grid-item"> 
-                <a href="{% url 'count' %}">Rechercher parmi les employés ceux ayant reçu et/ou envoyé le plus de mails sur une période précise</a>
+                <a href="{% url 'countEmail' %}">Rechercher parmi les employés ceux ayant reçu et/ou envoyé le plus de mails sur une période précise</a>
             </div>
             <div class="grid-item"> 
                 <a href="{% url 'details' %}">Afficher les correspondances d'un employé sur une période</a>
             </div>
             <div class="grid-item"> 
-                <a href=""> Afficher les couples d'employés ayant commnuniqué dans un intervalle de temps choisi</a>
+                <a href="{% url 'coupleEmployees' %}"> Afficher les couples d'employés ayant commnuniqué dans un intervalle de temps choisi</a>
             </div>
             <div class="grid-item"> 
                 <a href=""> Afficher les jours ayant connu un grand nombre d'échange de mails.  Avec la possibilité de différencier les échanges  entre internes de ceux des internes-externes</a>

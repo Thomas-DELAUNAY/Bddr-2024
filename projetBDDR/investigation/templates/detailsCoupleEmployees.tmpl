@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails des Couples de Communication</title>
+    <style>
+        body {
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 30px;
+            text-align: start;
+        }
+
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            color: black;
+            float: left;
+            padding: 8px 16px;
+            text-decoration: none;
+            transition: background-color .3s;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .pagination a:hover:not(.active) {background-color: #ddd;}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h1>Détails des Couples de Communication</h1>
+        <p> Voici la liste des addresses email des employés ayant communiqué entre eux, ainsi que 
+            le nombre de mails échangés, classés par ordre décroissant </p>
+        {% if Couples %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee Address 1</th>
+                        <th>Employee Address 2</th>
+                        <th>Total Mails Échangés</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for couple in Couples %}
+                    <tr>
+                        <td>{{ couple.employee_addresse_1}}</td>
+                        <td>{{ couple.employee_addresse_2}}</td>
+                        <td>{{ couple.total_mails_echanges }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class='container'>
+                <div class="pagination" style="display: flex; justify-content: center;">
+                    <span class="step-links" style="display: flex;">
+                        <span style="margin-right: 20px;">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; Première</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">Précédente</a>
+                        {% endif %}
+                        </span>
+
+                        <span class="current" style="margin-right: 20px; margin-bottom:0;">
+                            Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        <span >
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">Suivante</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">Dernière &raquo;</a>
+                        {% endif %}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        {% endif %}
+
+        <div id='results' style="display: flex; justify-content: center;" >
+            <div class="back-button">
+                <button> <a href='{% url "coupleEmployees" %}'> Retour à la recherche </a></button>
+            </div>
+
+            <div class="back-button">
+                <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+</html>

@@ -3,14 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des employés</title>
+    <title>Recherche</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, sans-serif;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: start;
+        }
+
+        /* Créez une grille pour aligner les boîtes */
+        .grid {
+            display: flexbox;
+            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            grid-gap: 10px;
+        }
+
+        /* Style des boîtes */
+        .box {
+          
+            padding: 5px;
+            margin : 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: auto;
+        }
+
+        .box-content {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 3px;
+        }
+
+        .box-content ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .box-content ul li {
+            margin : 5px;
+        }
+
+        #back {
+            max-width: 1000px;
+            margin: auto;
+            padding: 10px;
+            text-align: center;
+            
+        }
+    </style>
+
 </head>
 <body>
 
     <div class="container">
-        <h2> Employés ayant envoyé et/ou reçu plus que {{ x }} mails dans l'intervalle de temps choisi :</h2>
+        <h2> Employés ayant envoyé et/ou reçu plus ou moins {{ x }} mails dans l'intervalle de temps choisi :</h2>
 
-        <form id="CountEmailsForm" method="POST" action="{% url 'count' %}">
+        <form id="CountEmailsForm" method="POST" action="{% url 'countEmail' %}">
             {% csrf_token %}
 
             <div class="form-group">
@@ -36,23 +95,10 @@
         </form>
     </div>
 
-    <div class='container'>
-        {% if employes_avec_plus_de_x_mails %}
-        <h1>Détails</h1>
-     
-        <ul>  
-            <li>Employés avec plus de mails :</li>
-            {% for employe in  employes_avec_plus_de_x_mails %}
-                <li>{{ employe.firstname }} {{ employe.lastname }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </div>
-
 
     <div id='results' style="display: flex; justify-content: center;" >
         <div class="back-button">
-            <button> <a href='{% url "count" %}'> Retour à la recherche </a></button>
+            <button> <a href='{% url "countEmail" %}'> Retour à la recherche </a></button>
         </div>
 
         <div class="back-button">

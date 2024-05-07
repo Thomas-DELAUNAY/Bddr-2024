@@ -69,7 +69,7 @@ def traitment_file_xml(xml_file_path):
                     
                     for e in emails:
                         #création de l'addresseEmail
-                        AddresseEmail.objects.create(addresse=e,estInterne=True, employee=emp)
+                        AddresseEmail.objects.create(addresse=e,estinterne='enron' in e, employee=emp)
                             
             except Employee.DoesNotExist as e:
                 logging.error(f" Erreur lors de la création de l'employé {lastname}: {e} ")
@@ -90,7 +90,6 @@ def parcours_directory(directory):
         elif element.is_dir(): # Vérifie si c'est un dossier
             files_list.extend(parcours_directory(element.path)) # appelle récursivement parcours_directory() pour parcourir le sous-répertoire
     return files_list 
-
 
 
 def parcours_file(file_path):
@@ -135,9 +134,9 @@ def parcours_file(file_path):
             try:
                 with transaction.atomic():                             
                 # Si l'addresse de l'expéditeur n'existe pas, nous la créons
-                    sender, _ = AddresseEmail.objects.get_or_create(addresse=sender_email, estInterne=sender_email.endswith('@enron.com'))    
+                    sender, _ = AddresseEmail.objects.get_or_create(addresse=sender_email, estinterne=sender_email.endswith('@enron.com'))    
                     #print(f" addresse {sender.addresse} a été ajouté avec succès.  ")
-
+                    
                     # Création de l'Email
                     email= Email.objects.create(
                         date=date,
@@ -145,17 +144,19 @@ def parcours_file(file_path):
                         subject=subject,
                         content=content
                     )
-
+                    
+                    
                     for type, emails in email_types.items():  # Boucle sur chaque type d'e-mail
                         for email_address in emails:  # Boucle sur chaque adresse e-mail dans le groupe
                             if clean(email_address):
+                               # Crée ou récupère l'adresse e-mail
+                                ad, _ = AddresseEmail.objects.get_or_create(addresse=email_address, estinterne='enron' in email_address)
                                 
-                                #Crée ou récupère l'adresse e-mail
-                                ad, _ = AddresseEmail.objects.get_or_create(addresse=email_address, estInterne=email_address.endswith('@enron.com'))
-                                
-                                # Associe les destinataires aux e-mails 
-                                ReceiversMail.objects.create(email=email, addresse_email=ad, type=type)    # update_or_create pour associer cette adresse e-mail à l'e-mail en cours de création avec le bon type.
-                                print(" Ajout des destinataires terminé ")
+                                # Créer ReceiversMail avec les e-mails associés
+                                receivers_mail = ReceiversMail.create_with_emails(cls= ReceiversMail,addresse_email=ad, type=type, emails=[email])
+                                receivers_mail.save()
+
+                                #print(" Ajout des destinataires terminé ")
                                                  
             except Email.DoesNotExist as e:
                 logging.error(f" Erreur lors de l'enregistrement de l'email: {email}")  

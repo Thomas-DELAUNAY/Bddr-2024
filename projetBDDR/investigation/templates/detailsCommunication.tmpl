@@ -65,16 +65,17 @@
 
 <body>
     <title> Listes des correspondances </title>
-
     <div class="container">
-        {% if employees_data %}
+        {% if employees %}
         <div class="grid">
-            <p>Les addresses email avec lesquelles <strong>{{employee_id.firstname}} {{employee_id.lastname}}</strong> a échangé  entre  <strong>{{ date_debut }}</strong>  et  <strong>{{ date_fin }}</strong>  sont :</p>
+            <p>Les addresses email avec lesquelles  <strong>{{employee_id.firstname}} {{employee_id.lastname}}</strong> a échangé  entre  <strong>{{ date_debut }}</strong>  et  <strong>{{ date_fin }}</strong>  sont :</p>
             <div class="box">
-                {% for addresse in employees_data %}
+                {% for addresse in employees %}
                 <div class="box-content">
                     <ul> 
-                        <li>{{ addresse.0 }} - {{ addresse.1 }}  - {{ addresse.2 }}  </li>
+                        <li> type : {{ addresse.0}}
+                        <li> addresse : {{ addresse.1}} </li>  
+                        <li> date:  {{ addresse.2}}  </li>
                     </ul>
                 </div>
                 {% endfor %}
@@ -87,7 +88,7 @@
 
     <div id='results' style="display: flex; justify-content: center;" >
         <div class="back-button">
-            <button> <a href='{% url "echanges" %}'> Retour </a></button>
+            <button> <a href='{% url "rechercheEmployee" %}'> Retour </a></button>
         </div>
         <div class="back-button">
             <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>

@@ -14,3 +14,8 @@ class CountEmailsForm(forms.Form):
     nombre_min = forms.IntegerField(label="Nombre minimum de mails") 
     nombre_max = forms.IntegerField(label="Nombre maximum de mails") 
     
+class CoupleEmployeesForm(forms.Form):
+    date_debut = forms.DateField(label="Date de début")
+    date_fin = forms.DateField(label="Date de fin") 
+    seuil = forms.IntegerField(label="seuil") 
+    nombre_max = forms.IntegerField(label="nombre_max")

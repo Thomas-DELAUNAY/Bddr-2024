@@ -6,9 +6,10 @@ urlpatterns = [
     path('employees', listeEmployees, name='employees'),
     path('emails', listeEmails, name='emails'),
     path('recherche', details_about_employee, name="recherche"),
-    path('echanges', search_employee, name='echanges'),
-    path('dates', dates, name='dates'),
-    path('details', employees_communication, name='details'),
-    path('count', count_mails, name="count"),
-    path('dates2', dates2, name='dates2'),
-]
+    path('countEmail', count_mails, name='countEmail'),
+    path('rechercheEmployee', search_employee, name='rechercheEmployee'),
+    path('rechercheEmployee/dates', dates, name='dates'),
+    path('rechercheEmployee/dates/detailsCommunication', employees_communication, name='details'),
+    path('coupleEmployees/', couple_employees_ayant_communique, name='coupleEmployees'),
+    path('coupleEmployees/detailsCouples/', CoupleCommunicationView.as_view(), name='detailsCouples'),
+] 
