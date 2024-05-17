@@ -378,3 +378,147 @@ class CoupleCommunicationView(ListView):
 
 
 ###### QUESTION 5
+
+
+from django.db import connection
+from datetime import datetime
+
+def get_top_days_with_most_emails(start_date, end_date, limit=10):
+    with connection.cursor() as cursor:
+        cursor.execute('''
+            SELECT
+                DATE(em.date_send) AS email_date,
+                COUNT(CASE WHEN em.estInterne = 'internal' THEN 1 ELSE NULL END) AS internal_emails,
+                COUNT(CASE WHEN em.estInterne != 'internal' THEN 1 ELSE NULL END) AS external_emails,
+                COUNT(*) AS total_emails
+            FROM
+                Email em
+            WHERE
+                em.date_send BETWEEN %s AND %s
+            GROUP BY
+                email_date
+            ORDER BY
+                total_emails DESC
+            LIMIT %s;
+        ''', [start_date, end_date, limit])
+        
+        results = cursor.fetchall()
+    
+    if results:
+        for result in results:
+            print(f"Date: {result[0]}, Internal Emails: {result[1]}, External Emails: {result[2]}, Total Emails: {result[3]}")
+    else:
+        print("No data found for the given period.")
+
+# Utilisation de la fonction
+start_date = '2000-01-01'
+end_date = '2001-12-31'
+limit = 10
+
+get_top_days_with_most_emails(start_date, end_date, limit)
+
+###### QUESTION 6
+
+from django.db import connection
+
+def search_emails_by_keywords(keywords):
+    with connection.cursor() as cursor:
+        sql_query = '''
+            SELECT
+                em.id AS email_id,
+                e1.last_name AS sender_last_name,
+                e1.first_name AS sender_first_name,
+                e2.last_name AS receiver_last_name,
+                e2.first_name AS receiver_first_name,
+                em.subject,
+                em.content
+            FROM
+                Email em
+            JOIN
+                Employee e1 ON em.sender_id = e1.id
+            JOIN
+                receivers_mail rm ON em.id = rm.email_id
+            JOIN
+                Employee e2 ON rm.addresse_email_id = e2.id
+            WHERE
+        '''
+
+        for i in range(len(keywords)):
+            if i != 0:
+                sql_query += ' OR '
+            sql_query += "em.content LIKE %s"
+        sql_query += " ORDER BY em.id;"
+        
+        cursor.execute(sql_query, [f'%{keyword}%' for keyword in keywords])
+        
+
+        results = cursor.fetchall()
+    
+    return results
+
+
+keywords = ['mot1', 'mot2', 'mot3']  
+results = search_emails_by_keywords(keywords)
+
+
+for row in results:
+    print(f"Email ID: {row[0]}, Sender: {row[2]} {row[1]}, Receiver: {row[4]} {row[3]}, Subject: {row[5]}, Content: {row[6]}")
+
+###### QUESTION 7
+
+
+from django.db import connection
+
+def get_emails_in_conversation(email_id):
+    with connection.cursor() as cursor:
+        cursor.execute('''
+            SELECT
+                em.id AS email_id,
+                e1.last_name AS sender_last_name,
+                e1.first_name AS sender_first_name,
+                em.subject,
+                em.content
+            FROM
+                Email em
+            JOIN
+                Employee e1 ON em.sender_id = e1.id
+            JOIN
+                (
+                    SELECT DISTINCT
+                        conversation_id
+                    FROM
+                        (
+                            SELECT
+                                CASE
+                                    WHEN sender_id < receiver_id THEN CONCAT(sender_id, '-', receiver_id)
+                                    ELSE CONCAT(receiver_id, '-', sender_id)
+                                END AS conversation_id
+                            FROM
+                                (
+                                    SELECT
+                                        sender_id,
+                                        adresse_id AS receiver_id
+                                    FROM
+                                        Email em
+                                    JOIN
+                                        receivers_mail rm ON em.id = rm.email_id
+                                    WHERE
+                                        em.id = %s
+                                ) AS conversation_participants
+                        ) AS conversation_ids
+                ) AS conversation ON em.id = conversation_id
+            ORDER BY
+                em.date_send;
+        ''', [email_id])
+        
+        results = cursor.fetchall()
+    
+    return results
+
+
+email_id = 'ID_du_mail_donné'  
+results = get_emails_in_conversation(email_id)
+
+
+for row in results:
+    print(f"Email ID: {row[0]}, Sender: {row[2]} {row[1]}, Subject: {row[3]}, Content: {row[4]}")
