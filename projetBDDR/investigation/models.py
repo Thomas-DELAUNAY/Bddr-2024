@@ -53,14 +53,12 @@ class Email(models.Model):
     sender_mail = models.ForeignKey('AddresseEmail',null=True,default=None, on_delete=models.CASCADE, related_name='sent_email')
     subject = models.CharField(max_length=200, default=None)
     content = models.TextField(default='')
-   
-
-
-# Cette classe gère les objets de type couple d'employées et le nombre de mails echangés par ces derniers
+    
+# Cette classe gère les objets de type couple d'employées et le nombre de mails echangés entre ces derniers
 class CoupleCommunication(models.Model):
     employee_addresse_1 = models.EmailField(max_length=100)
     employee_addresse_2 = models.EmailField(max_length=100)
     total_mails_echanges = models.IntegerField()
     
     class Meta:
-        unique_together = ['employee_addresse_1', 'employee_addresse_2', 'total_mails_echanges']   
+        unique_together = ['employee_addresse_1', 'employee_addresse_2']   

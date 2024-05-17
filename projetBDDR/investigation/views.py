@@ -20,6 +20,9 @@ logging.basicConfig(filename='errors_views.log', level=logging.INFO, format='%(a
 def index(request):
     return render(request, 'home.tmpl')
 
+def page_accueil(request):
+    return render(request,"index.tmpl")
+
 def listeEmployees(request):
     listeEmployees = ReceiversMail.objects.all()
     paginator = Paginator(listeEmployees, 25)  # Show 25 contacts per page.
@@ -28,17 +31,17 @@ def listeEmployees(request):
     page_obj = paginator.get_page(page_number)  
     return render(request, 'listeEmployes.tmpl',{ 'page_obj' : page_obj})
  
-def listeEmails(request):
-    listeEmployees = Email.objects.all()
-    paginator = Paginator(listeEmployees, 25)  # Show 25 contacts per page.
+def listeAddresseEmail(request):
+    listeAddresseEmail = AddresseEmail.objects.all()
+    paginator = Paginator(listeAddresseEmail, 25)  # Show 25 contacts per page.
 
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)  
-    return render(request, 'listeEmails.tmpl',{ 'page_obj' : page_obj})   
+    return render(request, 'listeAddresseemail.tmpl',{ 'page_obj' : page_obj})   
  
 #### QUESTION 1    
 
-def details_about_employee(request):
+def recherche_employees(request):
     if request.method == 'POST':
         form = EmployeeSearchForm(request.POST)
         if form.is_valid():
@@ -61,118 +64,103 @@ def details_about_employee(request):
                     addresses = AddresseEmail.objects.filter(employee=employee)
                     employees_with_addresses[employee] = addresses
                 
-                return render(request, 'rechercheEmployee.tmpl', {'employees': employees_with_addresses, 'form': form})
-                    
+                return render(request, 'detailsEmployee.tmpl', {'employees': employees_with_addresses, 
+                                                                'form': form})         
             else :
-                return render(request, 'rechercheEmployee.tmpl', {'form':form,'error_message': 'Aucun employé correspondant trouvé.'})
-                
+                return render(request, 'detailsEmployee.tmpl', {'form':form,'error_message': 'Aucun employé correspondant trouvé.'}) 
     else:
         form = EmployeeSearchForm()
     return render(request, 'rechercheEmployee.tmpl', {'form': form})
 
+def infos_sur_employee(request, addresse_email):
+    if request.method == 'GET':
+        addresse = addresse_email.split('/')[0]
 
+        try:
+            employee = Employee.objects.get(addresseemail__addresse=addresse)
+            addresses = AddresseEmail.objects.filter(employee=employee)
+            return render(request, 'infos.tmpl', {'employee': employee,
+                                             'addresses': addresses})
+        except Employee.DoesNotExist:
+            return render(request, 'infos.tmpl', {'error_message':"Aucune information n'est disponible pour cet employé"})
+
+
+      
+                    
 ###### QUESTION 2
 
 def count_mails(request):
-    """ Fonction pour récupérer les employés ayant recu et/ou envoyé plus de (resp. moins de) x mails par rapport aux autres """
+   # """ Fonction pour récupérer les employés ayant recu et/ou envoyé plus de (resp. moins de) x mails par rapport aux autres """
     if request.method == 'POST':
         date_debut = request.POST.get('date_debut')
         date_fin = request.POST.get('date_fin')
         nombre_min = request.POST.get('nombre_min')
         nombre_max = request.POST.get('nombre_max')
         
-        try: 
-            
-            nombre_max = nombre_max if nombre_max  else 0  
+        try:  
+            nombre_max = nombre_max if nombre_max  else 100000  
             nombre_min = nombre_min if nombre_min  else 0 
-            
+        
             # Compte les mails envoyés et reçus par chaque employé
-            query = """
-                SELECT addresse, 
-                    SUM(total_mails_envoyes_interne) AS total_mails_envoyes_interne,
-                    SUM(total_mails_envoyes_externe) AS total_mails_envoyes_externe
-                FROM (
-                    SELECT a.addresse, 
-                        COUNT(DISTINCT e.id) AS total_mails_envoyes_interne,
-                        0 AS total_mails_envoyes_externe
-                    FROM investigation_addresseemail a
-                    INNER JOIN investigation_email e ON a.id = e.sender_mail_id
-                    WHERE a.estInterne = True
-                        AND e.date BETWEEN %s AND %s
-                    GROUP BY a.addresse
-                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
-                    
-                    UNION ALL
-                    
-                    SELECT a.addresse, 
-                        0 AS total_mails_envoyes_interne,
-                        COUNT(DISTINCT e.id) AS total_mails_envoyes_externe
-                    FROM investigation_addresseemail a
-                    INNER JOIN investigation_email e ON a.id = e.sender_mail_id
-                    WHERE a.estInterne = False
-                        AND e.date BETWEEN %s AND %s
-                    GROUP BY a.addresse
-                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
-                ) AS combined_results
-                GROUP BY addresse
-                ORDER BY total_mails_envoyes_interne DESC
-            """
-            
             query1 = """
                 SELECT addresse, 
-                    SUM(total_mails_recus_interne) AS total_mails_recus_interne,
-                    SUM(total_mails_recus_externe) AS total_mails_recus_externe
+                    SUM(total_mails_envoyes_interne_interne) AS total_mails_envoyes_interne_interne,
+                    SUM(total_mails_envoyes_interne_externe) AS total_mails_envoyes_interne_externe,
+                    SUM(total_mails_recus_interne_interne) AS total_mails_recus_interne_interne,
+                    SUM(total_mails_recus_interne_externe) AS total_mails_recus_interne_externe
                 FROM (
-                    SELECT a.addresse, 
-                        COUNT(DISTINCT e.id) AS total_mails_recus_interne,
-                        0 AS total_mails_recus_externe
-                    FROM investigation_addresseemail a
-                    INNER JOIN investigation_receiversmail r ON a.id = r.addresse_email_id
-                    INNER JOIN investigation_receiversmail_email re ON re.receiversmail_id  = r.id
-                    INNER JOIN investigation_email e ON  e.id = re.email_id
-                    WHERE a.estInterne = True
-                        AND e.date BETWEEN %s AND %s
-                    GROUP BY a.addresse
-                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
-                      
-                    UNION ALL
+                    -- total des mails envoyés entre interne et avc les autres
                     
-                    SELECT a.addresse, 
-                        0 AS total_mails_recus_interne,
-                        COUNT(DISTINCT e.id) AS total_mails_recus_externe
-                    FROM investigation_addresseemail a
-                    INNER JOIN investigation_receiversmail r ON a.id = r.addresse_email_id
-                    INNER JOIN investigation_receiversmail_email re ON re.receiversmail_id  = r.id
-                    INNER JOIN investigation_email e ON  e.id = re.email_id
-                    WHERE a.estInterne = False
-                        AND e.date BETWEEN %s AND %s
-                    GROUP BY a.addresse
-                    HAVING COUNT(DISTINCT e.id) BETWEEN %s AND %s
-                ) AS received_results
+                    SELECT a1.addresse, 
+                        SUM(CASE WHEN (a1.estInterne AND a2.estInterne) THEN 1 ELSE 0 END) AS total_mails_envoyes_interne_interne,
+                        SUM(CASE WHEN NOT (a1.estInterne AND a2.estInterne) THEN 1 ELSE 0 END) AS total_mails_envoyes_interne_externe,
+                        0 AS total_mails_recus_interne_interne,
+                        0 AS total_mails_recus_interne_externe
+                    FROM investigation_email e
+                    INNER JOIN investigation_addresseemail a1 ON a1.id = e.sender_mail_id
+                    INNER JOIN investigation_receiversmail_email re ON re.email_id = e.id
+                    INNER JOIN investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                    INNER JOIN investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                    WHERE a1.estInterne=True AND (a1.addresse=a2.addresse) 
+                        AND (e.date BETWEEN %s AND %s)
+                    GROUP BY a1.addresse
+                    
+                    UNION ALL
+
+                    -- total des mails reçus entre interne et avec les autres
+                    
+                    SELECT a1.addresse, 
+                        0 AS total_mails_envoyes_interne_interne,
+                        0 AS total_mails_envoyes_interne_externe,
+                        SUM(CASE WHEN (a1.estInterne=True AND a2.estInterne=True) THEN 1 ELSE 0 END) AS total_mails_recus_interne_interne,
+                        SUM(CASE WHEN (a1.estInterne=True AND a2.estInterne=False)  OR ( a1.estInterne=False AND a2.estInterne=True) THEN 1 ELSE 0 END) AS total_mails_recus_interne_externe
+                    FROM investigation_email e
+                    INNER JOIN investigation_addresseemail a1 ON a1.id = e.sender_mail_id
+                    INNER JOIN investigation_receiversmail_email re ON re.email_id = e.id
+                    INNER JOIN investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                    INNER JOIN investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                    WHERE a1.estInterne =True AND (a1.addresse != a2.addresse) AND (e.date BETWEEN %s AND %s)
+                    GROUP BY a1.addresse    
+                ) AS combined
                 GROUP BY addresse
-                ORDER BY total_mails_recus_interne DESC
+                HAVING SUM(total_mails_envoyes_interne_interne + total_mails_envoyes_interne_externe + total_mails_recus_interne_interne + total_mails_recus_interne_externe)  BETWEEN %s AND %s
             """
-            
             # Exécute la requête
             with connection.cursor() as cursor:
-                cursor.execute(query, [date_debut, date_fin, nombre_min, nombre_max,
-                                       date_debut, date_fin, nombre_min, nombre_max])
-                employes_avec_plus_de_x_mails = cursor.fetchall()
+                cursor.execute(query1, [date_debut, date_fin,date_debut, date_fin, nombre_min, nombre_max])
+                resultats= cursor.fetchall()
                 
-                cursor.execute(query1, [date_debut, date_fin, nombre_min, nombre_max,
-                                        date_debut, date_fin, nombre_min, nombre_max])
-                employes_avec_plus_de_x = cursor.fetchall()                     
 
-            
             return render(request, 'detailsCountEmails.tmpl', {'date_debut':date_debut,
                                                            'date_fin':date_fin, 
                                                            'nombre_max': nombre_max,
                                                            'nombre_min':nombre_min,
-                                                           'plus_de_x_mails_envoyes': employes_avec_plus_de_x_mails,
-                                                           'plus_de_x_mails_recus': employes_avec_plus_de_x})
+                                                           'resultats':resultats
+                                                        })
         except Exception as e:
-            print(f" Erreur de type : \n {e}")
+            logging.error(f"Erreur de type: {e} ")
             return HttpResponse("Une erreur s'est produite lors du traitement de votre demande.")
+        
     else: 
         print(" Erreur Erreur Erreur ")
         return render(request, 'countEmails.tmpl')
@@ -255,7 +243,7 @@ def employees_communication(request):
                                                                             })
             else:
                 messages.error(request, "Le formulaire n'est pas valide.")
-                logging.error("Problème avec le formulaire : %s", form.errors)
+                logging.error("Problème avec le formulaire dans la fonction \'employees_communication\' : %s", form.errors)
                 
         except Exception as e:
             logging.error(f"Une erreur s'est produite lors de l'exécution de la requête : {e}")  
@@ -263,6 +251,9 @@ def employees_communication(request):
     else:
         form = CommunicationSearchForm()
     return render(request, 'communicationEmployees.tmpl', {'form': form})   
+
+
+
 
 
 ###### QUESTION 4
@@ -345,7 +336,7 @@ def couple_employees_ayant_communique(request):
                           
         else:
             messages.error(request, "Le formulaire n'est pas valide.")
-            logging.error("Problème avec le formulaire : %s", form.errors)
+            logging.error("Problème avec le formulaire dans la fonction \'couple_employees_ayant_communique\' : %s", form.errors)
     else:
         form = CoupleEmployeesForm()
     return render(request, 'coupleEmployees.tmpl', {'form': form})
@@ -362,7 +353,7 @@ class CoupleCommunicationView(ListView):
         queryset = []
         for couple in couples:
             employee_addresse_1, employee_addresse_2, total_mails_echanges = couple
-            couple_instance = CoupleCommunication(employee_addresse_1=employee_addresse_1, employee_addresse_2=employee_addresse_2, total_mails_echanges=total_mails_echanges)
+            couple_instance,_ = CoupleCommunication.objects.get_or_create(employee_addresse_1=employee_addresse_1, employee_addresse_2=employee_addresse_2, total_mails_echanges=total_mails_echanges)
             queryset.append(couple_instance)  
         return queryset
     
@@ -377,148 +368,219 @@ class CoupleCommunicationView(ListView):
         return seuil if seuil else 10  # Valeur par défaut si le seuil n'est pas défini dans la session
 
 
-###### QUESTION 5
+######     QUESTION 5   #######
 
+def jour_avec_plus_echanges(request):
+    if request.method == 'POST':
+        form = SearchDayWithMoreExchangesForm(request.POST)
+        if form.is_valid():
+            date_debut = form.cleaned_data.get('date_debut').strftime('%Y-%m-%d')
+            date_fin = form.cleaned_data.get('date_fin').strftime('%Y-%m-%d')
+            
+            try:
+                # Compte les mails envoyés par jour sur une période
+                query = """
+                    SELECT DISTINCT e.date,
+                        SUM(CASE WHEN (a1.estInterne AND a2.estInterne) THEN 1 ELSE 0 END)  AS total_mails_interne
+                    FROM investigation_email e
+                    INNER JOIN investigation_addresseemail a1 ON e.sender_mail_id = a1.id
+                    INNER JOIN investigation_receiversmail_email re ON re.email_id = e.id
+                    INNER JOIN investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                    INNER JOIN investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                    WHERE e.date BETWEEN %s AND %s
+                    GROUP BY e.date
+                    ORDER BY total_mails_interne DESC, e.date
+                    LIMIT 15
+                """
+                
+                query2= """
+                    SELECT DISTINCT e.date,
+                        SUM(CASE WHEN (a1.estInterne=True AND a2.estInterne=False)  OR ( a1.estInterne=False AND a2.estInterne=True) THEN 1 ELSE 0 END) AS total_mails_interne_externe
+                    FROM investigation_email e
+                    INNER JOIN investigation_addresseemail a1 ON e.sender_mail_id = a1.id
+                    INNER JOIN investigation_receiversmail_email re ON re.email_id = e.id
+                    INNER JOIN investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                    INNER JOIN investigation_addresseemail a2 ON a2.id = rm.addresse_email_id
+                    WHERE e.date BETWEEN %s AND %s
+                    GROUP BY e.date
+                    ORDER BY total_mails_interne_externe DESC, e.date
+                    LIMIT 15
+                """
+                with connection.cursor() as cursor:
+                    cursor.execute(query, [date_debut, date_fin])
+                    echanges_interne = cursor.fetchall() 
+                    
+                    cursor.execute(query2, [date_debut, date_fin])
+                    echanges_externe = cursor.fetchall()
+                #print(echanges_externe)
+                    
+                plot = render_histogram(echanges_interne,echanges_externe)
+               
+                return render(request,'detailsSearchHotDay.tmpl', {'form':form,
+                                                                   'resultats':echanges_interne,
+                                                                   'resultats1': echanges_externe
+                                                                   })  
+            except Exception as e:
+                logging.error(f"Erreur survenue: \n {e}")
 
-from django.db import connection
-from datetime import datetime
-
-def get_top_days_with_most_emails(start_date, end_date, limit=10):
-    with connection.cursor() as cursor:
-        cursor.execute('''
-            SELECT
-                DATE(em.date_send) AS email_date,
-                COUNT(CASE WHEN em.estInterne = 'internal' THEN 1 ELSE NULL END) AS internal_emails,
-                COUNT(CASE WHEN em.estInterne != 'internal' THEN 1 ELSE NULL END) AS external_emails,
-                COUNT(*) AS total_emails
-            FROM
-                Email em
-            WHERE
-                em.date_send BETWEEN %s AND %s
-            GROUP BY
-                email_date
-            ORDER BY
-                total_emails DESC
-            LIMIT %s;
-        ''', [start_date, end_date, limit])
-        
-        results = cursor.fetchall()
-    
-    if results:
-        for result in results:
-            print(f"Date: {result[0]}, Internal Emails: {result[1]}, External Emails: {result[2]}, Total Emails: {result[3]}")
+        else:
+            messages.error(request, "Le formulaire n'est pas valide.")
+            logging.error("Problème avec le formulaire dans la focntion \'jour_avec_plus_echanges\' : %s", form.errors)
+       
     else:
-        print("No data found for the given period.")
+        form = SearchDayWithMoreExchangesForm()
+    return render(request,'searchHotDay.tmpl',{'form':form}) 
 
-# Utilisation de la fonction
-start_date = '2000-01-01'
-end_date = '2001-12-31'
-limit = 10
 
-get_top_days_with_most_emails(start_date, end_date, limit)
-
-###### QUESTION 6
-
-from django.db import connection
-
-def search_emails_by_keywords(keywords):
-    with connection.cursor() as cursor:
-        sql_query = '''
-            SELECT
-                em.id AS email_id,
-                e1.last_name AS sender_last_name,
-                e1.first_name AS sender_first_name,
-                e2.last_name AS receiver_last_name,
-                e2.first_name AS receiver_first_name,
-                em.subject,
-                em.content
-            FROM
-                Email em
-            JOIN
-                Employee e1 ON em.sender_id = e1.id
-            JOIN
-                receivers_mail rm ON em.id = rm.email_id
-            JOIN
-                Employee e2 ON rm.addresse_email_id = e2.id
-            WHERE
-        '''
-
-        for i in range(len(keywords)):
-            if i != 0:
-                sql_query += ' OR '
-            sql_query += "em.content LIKE %s"
-        sql_query += " ORDER BY em.id;"
-        
-        cursor.execute(sql_query, [f'%{keyword}%' for keyword in keywords])
-        
-
-        results = cursor.fetchall()
+def render_histogram(liste1, liste2):
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     
-    return results
+    dates1 = [item[0].strftime('%Y-%m-%d') for item in liste1]
+    dates2 = [item[0].strftime('%Y-%m-%d') for item in liste2]
+    
+    total_mails_interne1 = [item[1] for item in liste1]
+    total_mails_interne_externe2 = [item[1] for item in liste2]
+
+    # Largeur des barres
+    bar_width = 0.35
+
+    # Création de la figure et des sous-graphiques
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+    # Création du premier diagramme en bâtons
+    ax1.bar(dates1, total_mails_interne1, color='b', width=bar_width, edgecolor='grey', label='Total mails internes')
+    # Création du deuxième diagramme en bâtons
+    ax2.bar(dates2, total_mails_interne_externe2, color='r', width=bar_width, edgecolor='grey', label='Total mails internes-externes')
+
+    # Ajout des étiquettes et des titres
+    for ax in [ax1, ax2]:
+        ax.set_xlabel('Jour', fontweight='bold')
+        ax.set_ylabel('Nombre de mails', fontweight='bold')
+        ax.legend()
+        
+    # Ajustement des étiquettes de l'axe x
+    ax1.set_xticks(range(len(dates1)))  # Positions des étiquettes
+    ax1.set_xticklabels(dates1, rotation=90)  # Étiquettes elles-mêmes et rotation
+
+    ax2.set_xticks(range(len(dates2)))  # Positions des étiquettes
+    ax2.set_xticklabels(dates2, rotation=90)  # Étiquettes elles-mêmes et rotation
+
+    # Ajustement automatique de la disposition des sous-graphiques
+    plt.tight_layout()
+    plt.savefig('./investigation/static/histogramme.png')
+    plt.clf()
 
 
-keywords = ['mot1', 'mot2', 'mot3']  
-results = search_emails_by_keywords(keywords)
+###### QUESTION 6  #####   Rechercher des emails selon une liste de mots 
 
 
-for row in results:
-    print(f"Email ID: {row[0]}, Sender: {row[2]} {row[1]}, Receiver: {row[4]} {row[3]}, Subject: {row[5]}, Content: {row[6]}")
+def get_emailIDs(liste):
+    return liste.split(",") if liste else []
 
+
+def afficher_contenu_email(request, email_id):
+    try:
+        email= Email.objects.get(id=email_id) # Accéder à l'objet Email associé
+        
+        # Récupérer les destinataires de l'email
+        receivers_mail = ReceiversMail.objects.filter(email=email)
+        
+        # Séparer les destinataires en fonction de leur type
+        to_addresses = [rm.addresse_email.addresse for rm in receivers_mail if rm.type == "TO"]
+        cc_addresses = [rm.addresse_email.addresse for rm in receivers_mail if rm.type == "CC"]
+        bcc_addresses = [rm.addresse_email.addresse for rm in receivers_mail if rm.type =="BCC"]
+        
+        print(to_addresses)
+
+        return render(request, 'contenuEmail.tmpl', {
+            'email': email,
+            'to_addresses': to_addresses,
+            'cc_addresses': cc_addresses,
+            'bcc_addresses': bcc_addresses
+        })
+            
+    except Email.DoesNotExist as e:
+        logging.error(f"Erreur survenue lors de l'affichage du contenu d'un email : \n {e}")
+        return render(request, 'contenuEmail.tmpl', {'erreur': 'Le contenu de l\'email n\'existe pas.'})
+        
+
+def recherche_par_mots(request):
+    if request.method == 'POST':
+        form = SearchEmailByWordsForm(request.POST)
+        if form.is_valid():
+            liste = form.cleaned_data['liste']
+            affichage_par = form.cleaned_data['affichage_par']
+            
+            try:
+                mots_cles = [mot.strip() for mot in liste.split(',')]
+                
+                if mots_cles:
+                
+                    # Créer une liste de conditions LIKE pour chaque mot de la liste
+                    conditions_like = []
+                    for mot in mots_cles:
+                        condition_like = "content LIKE '%" + mot + "%'"
+                        conditions_like.append(condition_like)
+
+                        # Join des conditions LIKE avec l'opérateur OR
+                        conditions_combined = " OR ".join(conditions_like)
+                    
+            
+                    if affichage_par == 'option2': #par destinataire
+                        query = f"""
+                            SELECT a.addresse, STRING_AGG(CAST(e.id AS VARCHAR), ',') as email_ids
+                            FROM investigation_email e
+                            INNER JOIN investigation_receiversmail_email re ON re.email_id = e.id
+                            INNER JOIN investigation_receiversmail rm ON rm.id = re.receiversmail_id
+                            INNER JOIN investigation_addresseemail a ON a.id = rm.addresse_email_id
+                            WHERE {conditions_combined}
+                            GROUP BY a.addresse
+                        """    
+                        
+                    elif affichage_par == 'option3': # par sujet
+                        
+                        query = f"""
+                            SELECT e.subject, STRING_AGG(CAST(e.id AS VARCHAR), ',') as email_ids
+                            FROM investigation_email e
+                            INNER JOIN investigation_addresseemail a ON a.id = e.sender_mail_id 
+                            WHERE {conditions_combined}
+                            GROUP BY e.subject
+                        """   
+                        
+                    elif affichage_par == 'option1': #par expéditeur
+                        
+                        query = f"""
+                            SELECT a.addresse, STRING_AGG(CAST(e.id AS VARCHAR), ',') as email_ids
+                            FROM investigation_email e
+                            INNER JOIN investigation_addresseemail a ON a.id = e.sender_mail_id 
+                            WHERE {conditions_combined}
+                            GROUP BY a.addresse
+                        """
+                    else:
+                       pass
+    
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    emails = cursor.fetchall()
+                            
+                    # Appel de la fonction get_emailIDs pour diviser les identifiants d'email
+                    for i, email in enumerate(emails):
+                        email = list(email)  # Convertir le tuple en liste
+                        email[1] = get_emailIDs(email[1])  # Modifier la liste
+                        emails[i] = tuple(email)  # Reconvertir la liste en tuple et mettre à jour la liste de tuple  
+                                
+                return render(request, 'detailsRechercheParMots.tmpl', {'form': form, 'emails': emails, 'filtre':affichage_par})
+                    
+            except Exception as e:
+                logging.error(f'Type d\'erreur survenu: \n{e}')
+        else:
+            logging.error("Problème avec le formulaire fonction 'recherche_par_mots': %s", form.errors)
+    else:
+        form = SearchEmailByWordsForm()
+    return render(request, 'rechercheParMots.tmpl', {'form': form})
+
+
+        
 ###### QUESTION 7
-
-
-from django.db import connection
-
-def get_emails_in_conversation(email_id):
-    with connection.cursor() as cursor:
-        cursor.execute('''
-            SELECT
-                em.id AS email_id,
-                e1.last_name AS sender_last_name,
-                e1.first_name AS sender_first_name,
-                em.subject,
-                em.content
-            FROM
-                Email em
-            JOIN
-                Employee e1 ON em.sender_id = e1.id
-            JOIN
-                (
-                    SELECT DISTINCT
-                        conversation_id
-                    FROM
-                        (
-                            SELECT
-                                CASE
-                                    WHEN sender_id < receiver_id THEN CONCAT(sender_id, '-', receiver_id)
-                                    ELSE CONCAT(receiver_id, '-', sender_id)
-                                END AS conversation_id
-                            FROM
-                                (
-                                    SELECT
-                                        sender_id,
-                                        adresse_id AS receiver_id
-                                    FROM
-                                        Email em
-                                    JOIN
-                                        receivers_mail rm ON em.id = rm.email_id
-                                    WHERE
-                                        em.id = %s
-                                ) AS conversation_participants
-                        ) AS conversation_ids
-                ) AS conversation ON em.id = conversation_id
-            ORDER BY
-                em.date_send;
-        ''', [email_id])
-        
-        results = cursor.fetchall()
-    
-    return results
-
-
-email_id = 'ID_du_mail_donné'  
-results = get_emails_in_conversation(email_id)
-
-
-for row in results:
-    print(f"Email ID: {row[0]}, Sender: {row[2]} {row[1]}, Subject: {row[3]}, Content: {row[4]}")

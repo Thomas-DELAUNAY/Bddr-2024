@@ -18,33 +18,23 @@
     <div class="container-fluid m-1 p-5">
         <nav class="navbar navbar-expand-sm mb-5 bg-primary justify-content-center sticky-top" >
             <h4 class="h4 text-center text-white" style=" font-family: 'Helvetica'; font-size: 38px; max-width: 100%;">
-                Informations sur l'employé 
+                Informations sur les employés
             </h4>
         </nav>
         
         <div class="container mt-3">
-            {% if employees %}
-            <div class="row row-cols-1 row-cols-md-3 g-4">
-                {% for employee, addresses in employees.items %}
-                <div class="col">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <p class="card-text">Nom : {{ employee.lastname}}</p>
-                            <p class="card-text">Prénom : {{ employee.firstname }}</p>
-                            <p class="card-text">Catégorie : {{ employee.category }}</p>
-                            <p class="card-text"> Mailbox : {{ employee.mailbox }}</p>
-                            <p class="card-text">Adresses e-mail :
-                                <ul class="custom-list">
-                                    {% for e in addresses %}
-                                    <li>{{ e.addresse }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </p>
-                        </div>
-                    </div>
+            {% if employee %}
+                <div class="container mt-5">
+                    <p>Nom : {{ employee.lastname }}</p>
+                    <p>Prénom : {{ employee.firstname }}</p>
+                    <p>Catégorie : {{ employee.category }}</p>
+                    <p>Adresses e-mail :</p>
+                    <ul>
+                        {% for address in addresses %}
+                        <li>{{ address.addresse }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
-            {% endfor %}
-            </div>
             {% else %}
                 <p class="alert alert-danger" role="alert"> {{ error_message }} </p> 
             {% endif %}
