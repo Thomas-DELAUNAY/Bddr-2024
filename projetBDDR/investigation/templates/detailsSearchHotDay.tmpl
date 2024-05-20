@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <div class="container-fluid m-1 p-5">
+    <div class="container-fluid m-3 pb-5">
         <nav class="navbar navbar-expand-sm mb-5 bg-primary justify-content-center sticky-top" >
             <h4 class="h4 text-center text-white" style=" font-family: 'Helvetica'; font-size: 25px; max-width: 100%;">
                 Résultats de la recherche
@@ -19,27 +19,25 @@
         </nav>
 
         <div class="container mt-3 text-center">  
-            <!-- The Modal -->
-            <div class="modal fade" id="myModal">
-                <div class="modal-dialog">
-                <div class="modal-content">
-                    <!-- Modal body -->
-                    <div class="modal-body">
+          <div class="modal fade" id="myModal">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                  <div class="modal-body">
                     Les données de cette requête ont été limitées à 15 pour des questions d'affichage et de lisibilité des résultats.
-                    </div>
-            <!-- Modal footer -->
-                    <div class="modal-footer">
+                  </div>
+
+                  <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">fermer</button>
-                    </div>
-                </div>
-                </div>
+                  </div>
+              </div>
             </div>
+          </div>
             
             <img src="{% static 'histogramme.png' %}" alt="Mon histogramme des jours les plus hot" class="img-fluid" style="max-height: 350px; with:100%;">
-                <!-- Button to Open the Modal -->
-                <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#myModal">
+                
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#myModal">
                     Lisez-moi
-                </button>
+            </button>
         </div>
 
         <div class="container mt-5">
@@ -52,8 +50,8 @@
                     </div>
                     <div class="card-body">
                       {% for result in resultats %}
-                        <p class="text-center fw-bold mb-0">
-                          {{ result.0|date:"l j F Y" }} - total: {{ result.1 }}
+                        <p class="text-center  mb-0">
+                          {{ result.0|date:"l j F Y" }} -   total:  {{ result.1 }}
                         </p>
                       {% endfor %}
                     </div>
@@ -67,8 +65,8 @@
                     </div>
                     <div class="card-body">
                       {% for result1 in resultats1 %}
-                        <p class="text-center fw-bold mb-0">
-                          {{ result1.0|date:"l j F Y" }} - total: {{ result1.1 }}
+                        <p class="text-center mb-0">
+                          {{ result1.0|date:"l j F Y" }} -   total:  {{ result1.1 }}
                         </p>
                       {% endfor %}
                     </div>
@@ -79,18 +77,11 @@
           </div>
     </div>
 
-  <div class="d-flex justify-content-center mt-5">  
-    <div class="me-3">  
-        <button type="button" class="btn btn-outline-primary">
-            <a href="{% url 'searchdaydetails' %}" style="background-color: inherit; border: none; text-decoration: none; color: inherit;">retour</a>
-        </button>
+    <div class="d-flex justify-content-center mt-5" >
+      <button type="button" class="btn btn-outline-primary">
+       <a href='{% url "index" %}' style="background-color: inherit; border: none; text-decoration: none; color: inherit;"> page d'accueil </a>
+      </button>
     </div>
-<div>
-    <button type="button" class="btn btn-outline-primary">
-        <a href='{% url "index" %}' style="background-color: inherit; border: none; text-decoration: none; color: inherit;"> page d'accueil </a>
-    </button>
-</div>
-</div>
 
 </body>
 </html>

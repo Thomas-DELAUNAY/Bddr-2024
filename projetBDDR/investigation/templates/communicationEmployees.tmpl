@@ -8,91 +8,91 @@
     <title> Echanges entre employés </title>
 </head>
 
-<body>    
-    <div class="container-fluid m-2 p-5">
-        <nav class="navbar navbar-expand-sm bg-primary justify-content-center sticky-top" >
-            <h3 class="h3 text-center text-white" style=" font-family: 'Helvetica'; font-size: 38px; max-width: 100%;">
-                Liste des employés ayant eu des échanges d'émails
-            </h3>
-        </nav>
+<body>   
+    <div class="container-fluid m-2 pb-5">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-sm bg-primary justify-content-center sticky-top" >
+                <h3 class="h3 text-center text-white" style=" font-family: 'Helvetica'; font-size: 28px; max-width: 100%;">
+                    Recherche des correspondances d'un employés
+                </h3>
+            </nav>
 
-        <form id="communicationForm" method="POST" action="{% url 'rechercheEmployee' %}">
-            {% csrf_token %} 
-            <div class="m-2">
-                <div class="float-lg-start">
-                    <p style="font-size:20px; margin-top:30px; margin-bottom:30px;">
-                        Afin de savoir avec qui un certain employé a communiqué durant une certaine période, veuillez fournir les informations ci-dessous:
-                    </p>
+            <form id="communicationForm" method="POST" action="{% url 'rechercheEmployee' %}">
+                {% csrf_token %} 
+                <div class="m-2">
+                    <div class="float-lg-start">
+                        <p style="font-size:20px; margin-top:30px; margin-bottom:30px;">
+                            Afin de savoir avec qui un certain employé a communiqué durant une certaine période, veuillez fournir les informations ci-dessous:
+                        </p>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <input type="text" class="form-control" name="employee" placeholder="saisir le nom, prénom ou addresse-mail" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm m-2 btn-primary"> Rechercher </button>
                 </div>
-
-                <div class="mb-3 mt-3">
-                    <input type="text" class="form-control" name="employee" placeholder="saisir le nom, prénom ou addresse-mail">
-                </div>
-                <button type="submit" class="btn btn-sm m-2 btn-primary"> Rechercher </button>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
 
-    {% if employees %}
-    <div class="container-fluid m-2 p-5">
+        {% if employees %}
+        <div class="container-fluid pb-5">
             <form id="selectEmployeeForm" method="POST" action="{% url 'dates' %}">
                 {% csrf_token %}            
-                    <div class="m-2">
-                        <div>
-                            <h4 class="mb-3"> L'employé recherché est : </h4> <br>
-                        </div>
-                       
-                        {% for employee in employees %}
-                            <div class="form-check mb-3">
-                                <input type="radio" id="employee_{{ employee.id }}" name="selected_employee" value="{{ employee.id }}" class="form-check-input" required>
-                                <label for="employee_{{ employee.id }}" class="form-check-label">{{ employee.firstname }} {{ employee.lastname }}</label>
-                            </div>
-                        {% endfor %}
-                        <button type="submit" class="btn btn-sm m-2 btn-primary"> Sélectionner </button>
-                    </div> 
+                <div class="m-2">
+                    <div>
+                        <h4 class="h5 mb-3"> L'employé recherché est : </h4>
+                    </div>
+                        
+                    {% for employee in employees %}
+                    <div class="form-check mb-3">
+                        <input type="radio" id="employee_{{ employee.id }}" name="selected_employee" value="{{ employee.id }}" class="form-check-input" required>
+                        <label for="employee_{{ employee.id }}" class="form-check-label">{{ employee.firstname }} {{ employee.lastname }}</label>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-sm m-2 btn-primary"> Sélectionner </button>
+                </div> 
             </form>
-    </div>
-    {% else %}
-            <p> {{ error_message }} </p>
-    {% endif %}
-    
+        {% else %}
+                <p> {{ error_message }} </p>
+        {% endif %}
+        </div>
 
-
-    {% if selected_employee %}
-        <div class="container-fluid m-2 p-5">
-    
+        {% if selected_employee %}
+        <div class="container-fluid p-5">
             <form id="datesForm" method="POST" action="{% url 'details' %}">
                 {% csrf_token %}
                 <div class="m-2">
                     <div>
-                        <h3> Entrez les dates pour la recherche des interlocuteurs de {{ selected_employee.firstname }} {{ selected_employee.lastname }} </h3>
+                        <h4> Entrez les dates pour la recherche des interlocuteurs de {{ selected_employee.firstname }} {{ selected_employee.lastname }} </h4>
                     </div>
 
-                    <div class="mb-3 mt-3">
-                        <input type="hidden" name="employee_id" value="{{ selected_employee.id }}">
-                    </div>    
+                        <div class="mb-3 mt-3">
+                            <input type="hidden" name="employee_id" value="{{ selected_employee.id }}">
+                        </div>    
 
-                    <div class="mb-3 mt-3">
-                        <label for="date_debut"  class="form-label"> Date de début: </label>
-                        <input type="date" class="form-control" name="date_debut" required>
+                        <div class="mb-3 mt-3">
+                            <label for="date_debut"  class="form-label"> Date de début: </label>
+                            <input type="date" class="form-control" name="date_debut" required>
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <label for="date_fin"  class="form-label"> Date de fin: </label>
+                            <input type="date" class="form-control" name="date_fin" required>
+                        </div>
+            
+                        <button type="submit" class="btn btn-sm m-2 btn-primary"> Rechercher </button>
                     </div>
 
-                    <div class="mb-3 mt-3">
-                        <label for="date_fin"  class="form-label"> Date de fin: </label>
-                        <input type="date" class="form-control" name="date_fin" required>
-                    </div>
-        
-                    <button type="submit" class="btn btn-sm m-2 btn-primary"> Rechercher </button>
-                </div>
-
-            </form>
-        </div>
-    {% endif %}
+                </form>
+            </div>
+        </div>    
+        {% endif %}
+    </div>
       
     <div class="d-flex justify-content-center mt-5" >
         <button type="button" class="btn btn-outline-primary">
-         <a href='{% url "index" %}' style="background-color: inherit; border: none; text-decoration: none; color: inherit;"> page d'accueil </a>
+         <a href='{% url "index" %}' style="text-decoration: none;"> page d'accueil </a>
         </button>
     </div>
 

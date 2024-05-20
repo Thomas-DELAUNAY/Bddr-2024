@@ -9,7 +9,7 @@
 
 </head>
 <body>
-    <div class="container-fluid m-1 p-5">
+    <div class="container-fluid mb-5 p-3">
         <nav class="navbar navbar-expand-sm mb-5 bg-primary justify-content-center sticky-top" >
             <h4 class="h4 text-center text-white" style=" font-family: 'Helvetica'; font-size: 38px; max-width: 100%;">
                 Liste des couples d'employés en communication
@@ -17,9 +17,9 @@
         </nav>
 
         {% if Couples %}
-            <table class="table table-striped">
-                <thead class="table-primary text-white">
-                    <tr>
+            <table class="table table-bordered mb-3">
+                <thead>
+                    <tr class="table-black text-white">
                         <th>Adresse employée 1</th>
                         <th>Adresse employée 2</th>
                         <th>Total Mails Échangés</th>
@@ -27,7 +27,7 @@
                 </thead>
                 <tbody>
                     {% for couple in Couples %}
-                    <tr>
+                    <tr class="{% cycle 'table-primary' 'table-light' %}">
                         <td>{{ couple.employee_addresse_1 }}</td>
                         <td>{{ couple.employee_addresse_2 }}</td>
                         <td>{{ couple.total_mails_echanges }}</td>
@@ -60,18 +60,13 @@
                 </ul>
             </nav>
         {% endif %}
-
-        <div class="d-flex justify-content-center mt-5">  
-            <div class="me-3">  
-                <button type="button" class="btn btn-outline-primary">
-                    <a href="{% url 'coupleEmployees' %}" style="background-color: inherit; border: none; text-decoration: none; color: inherit;">retour</a>
-                </button>
-            </div>
-        <div>
-            <button type="button" class="btn btn-outline-primary">
-                <a href='{% url "index" %}' style="background-color: inherit; border: none; text-decoration: none; color: inherit;"> page d'accueil </a>
-            </button>
-        </div>
     </div>
+
+        <div class="d-flex justify-content-center mt-5 mb-2">  
+            <div>
+                <a href='{% url "index" %}' class="btn btn-outline-primary">page d'accueil</a>
+            </div>
+        </div>
+   
 </body>
 </html>

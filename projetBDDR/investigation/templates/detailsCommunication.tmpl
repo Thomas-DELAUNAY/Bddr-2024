@@ -3,97 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Correspondants </title>
+    <title>Correspondants</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: Helvetica, sans-serif;
         }
 
-        .container {
-            max-width: 100%;
-            margin: auto;
-            padding: 10px;
-            text-align: start;
-        }
-
-        /* Créez une grille pour aligner les boîtes */
-        .grid {
-            display: flexbox;
-            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
-            grid-gap: 10px;
-        }
-
-        /* Style des boîtes */
-        .box {
-          
-            padding: 5px;
-            margin : 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: auto;
-        }
-
         .box-content {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
             padding: 10px;
             margin-bottom: 10px;
         }
 
-        .box-content ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .box-content ul li {
-            margin-bottom: 5px;
-        }
-
-
-        #back {
-            max-width: 1000px;
-            margin: auto;
-            padding: 10px;
-            text-align: center;
+        .back-button {
+            margin: 10px;
         }
     </style>
 </head>
-
 <body>
-    <title> Listes des correspondances </title>
-    <div class="container">
+    <div class="container-fluid mb-2 p-3">
+        <nav class="navbar navbar-expand-sm bg-primary justify-content-center sticky-top" >
+            <h3 class="h4 text-center text-white" style=" font-family: 'Helvetica'; font-size: 25px; max-width: 100%;">
+                Addresses mail des employés avec lesquels <strong>{{employee_id.firstname}} {{employee_id.lastname}}</strong> a échangé entre <strong>{{ date_debut }}</strong> et <strong>{{ date_fin }}</strong>
+            </h3>
+        </nav>
+
         {% if employees %}
-        <div class="grid">
-            <p>Les addresses email avec lesquelles  <strong>{{employee_id.firstname}} {{employee_id.lastname}}</strong> a échangé  entre  <strong>{{ date_debut }}</strong>  et  <strong>{{ date_fin }}</strong>  sont :</p>
-            <div class="box">
-                {% for addresse in employees %}
-                <div class="box-content">
-                    <ul> 
-                        <li> type : {{ addresse.0}}
-                        <li> addresse : {{ addresse.1}} </li>  
-                        <li> date:  {{ addresse.2}}  </li>
-                    </ul>
+            <div class="row m-4">
+                {% for employee in employees %}
+                <div class="col-md-4">
+                    <div class="box-content bg-light">
+                        <ul class="list-unstyled">
+                            {% comment %} <li><strong>Type:</strong> {{ employee.0 }}</li> {% endcomment %}
+                            <li><strong>adresse:</strong> {{ employee.1 }}</li>
+                            <li><strong>date:</strong> {{ employee.2 }}</li>
+                        </ul>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
-        </div>      
+        {% else%}
+            <div class="alert alert-danger text-center mt-5" role="alert">
+                {{ error_message }}
+            </div>
         {% endif %}
-
-
     </div>
 
-    <div id='results' style="display: flex; justify-content: center;" >
-        <div class="back-button">
-            <button> <a href='{% url "rechercheEmployee" %}'> Retour </a></button>
-        </div>
-        <div class="back-button">
-            <button> <a href='{% url "index" %}'> Retour à la page d'accueil </a></button>
+    <div class="d-flex justify-content-center mt-5">  
+        <div>
+            <button type="button" class="btn btn-outline-primary mb-2">
+                <a href='{% url "index" %}' style="text-decoration: none; "> page d'accueil </a>
+            </button>
         </div>
     </div>
-
+    
 </body>
 </html>

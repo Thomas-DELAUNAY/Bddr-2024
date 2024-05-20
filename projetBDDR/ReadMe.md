@@ -117,12 +117,11 @@ PS C:\Users\utilisateur\Desktop\BDDR\projetBDDR> python run.py
 
 De retour, le peuplement a été fait avec succès (sinon consulter le journal d'erreurs à votre disposition). Maintenant le lancement de l'application à proprement parler. Rien de plus simple,
 
-````python
+``python
 PS C:\Users\utilisateur\Desktop\BDDR\projetBDDR> python manage.py runserver 
-````
-
+``
 qui fournit le resultat
-````python
+``python
 PS C:\Users\utilisateur\Desktop\BDDR\projetBDDR> python manage.py runserver
 Watching for file changes with StatReloader
 Performing system checks...
@@ -132,28 +131,27 @@ May 17, 2024 - 17:56:01
 Django version 4.1, using settings 'projetBDDR.settings'
 Starting development server at http://127.0.0.1:8000/   
 Quit the server with CTRL-BREAK.
-````
+``
 
-Il ne reste qu'à copier l'addresse du server sur lequel se trouve l'application, ici `http://127.0.0.1:8000/` se rendre dans un navigateur, saisir
+Il ne reste qu'à copier l'addresse du server sur lequel se trouve l'application, ici  `http://127.0.0.1:8000/` se rendre dans un navigateur, saisir
 
-````python
+``python
 http://127.0.0.1:8000/investigation/
-````
+``
 Vous accédez ainsi a la page d'accueil et laissez vous guidez. A tout moment cliquez sur commencer et faites vos recherches.
 
 Voici une image de la page des fonctionnalités disponibles.
 ![page d'accueil](./investigation/static/Capture.PNG)
 
 Supposons que je souhaite faire une recherche d'un certain employé mais je ne connais que son prénon `kevin`. Le formulaire de recherche se présente ainsi 
-
-![formulaire_de_recherche_employé](./investigation/static/Capture_form1.PNG).
-
+``python
+![formulaire de recherche d'employé](./investigation//static/Capture_form1.PNG)
+``
 le résultat de la recherche:
-
-
-![Résultats_de_la recherche](./investigation/static/Capture_form12.PNG)
-
+``python
+![Résultats de la recherche](./investigation/static/Capture_form12.PNG)
+``
 L'application nous sort tous les employés dont le prénom est `kevin`.
 
-Maintenant à vous de jouez!
+Maintenant à vous de jouez.
 
