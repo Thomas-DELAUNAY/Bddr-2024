@@ -20,7 +20,6 @@ class CoupleEmployeesForm(forms.Form):
     date_debut = forms.DateField(label="Date de début")
     date_fin = forms.DateField(label="Date de fin") 
     seuil = forms.IntegerField(label="seuil") 
-    nombre_max = forms.IntegerField(label="nombre_max")
       
 class SearchDayWithMoreExchangesForm(forms.Form):
     date_debut = forms.DateField(label="Date de début")
@@ -35,3 +34,13 @@ class HotSubjectsForm(forms.Form):
     start_date = forms.DateField(label="Date de début")
     end_date = forms.DateField(label="Date de fin")
     
+class SearchHotSubjectsForm(forms.Form):
+    sujet = forms.ChoiceField(choices=[], required=True, label="Sujet")
+
+    def __init__(self, *args, **kwargs):
+        sujets = kwargs.pop('sujets', [])
+        super(SearchHotSubjectsForm, self).__init__(*args, **kwargs)
+        self.fields['sujet'].choices = [(sujet, sujet) for sujet in sujets]
+
+class SeuilForm(forms.Form):
+    seuil = forms.IntegerField(label="Nombre de sujets à afficher", min_value=1)   

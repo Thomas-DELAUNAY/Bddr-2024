@@ -1,13 +1,17 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q,Count
 from django.db import connection
-import re,os
+import re,os,io, base64
+import seaborn as sns
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from django.views.generic import ListView
 
-from .models import Employee,AddresseEmail,Email, ReceiversMail, CoupleCommunication
+from .models import Employee,AddresseEmail,Email, ReceiversMail, CoupleCommunication,Groupe
 from .forms import * 
 
 import logging
@@ -97,7 +101,7 @@ def count_mails(request):
         nombre_max = request.POST.get('nombre_max')
         
         try:  
-            nombre_max = nombre_max if nombre_max  else 100000  
+            nombre_max = nombre_max if nombre_max  else 1000000  
             nombre_min = nombre_min if nombre_min  else 0 
         
             # Compte les mails envoyés et reçus par chaque employé
@@ -254,11 +258,10 @@ def couple_employees_ayant_communique(request):
             date_debut = form.cleaned_data.get('date_debut').strftime('%Y-%m-%d')
             date_fin = form.cleaned_data.get('date_fin').strftime('%Y-%m-%d')
             seuil = form.cleaned_data.get('seuil')
-            nombre_max = form.cleaned_data.get('nombre_max', 100000000)
             
             try:
-                if nombre_max :  
-                    query = """
+                
+                query = """
                         SELECT 
                             a1.addresse AS employee_id_1,
                             a2.addresse AS employee_id_2,
@@ -271,12 +274,11 @@ def couple_employees_ayant_communique(request):
                         WHERE e1.date BETWEEN %s AND %s 
                             AND a1.employee_id < a2.employee_id
                         GROUP BY a1.addresse, a2.addresse
-                        HAVING COUNT (DISTINCT e1.id) <= %s
                         ORDER BY total_mails_echanges DESC
                     """
-                    with connection.cursor() as cursor:
-                        cursor.execute(query, [date_debut, date_fin, nombre_max])
-                        couple_employees_ayant_communique = cursor.fetchall()
+                with connection.cursor() as cursor:
+                    cursor.execute(query, [date_debut, date_fin])
+                    couple_employees_ayant_communique = cursor.fetchall()
 
                 # Redirection vers la vue CoupleCommunicationView avec les données recupérées
                 request.session['Couples'] = couple_employees_ayant_communique
@@ -315,9 +317,9 @@ class CoupleCommunicationView(ListView):
         context['page_obj'] = context['paginator'].page(context['page_obj'].number)  # Utilisez votre propre nom de variable de contexte ici
         return context
     
-    def get_paginate_by(self):  # Utilisez le seuil stocké dans la session pour la pagination
-        seuil = self.request.session.get('seuil')
-        return seuil if seuil else 10  # Valeur par défaut si le seuil n'est pas défini dans la session
+    def get_paginate_by(self, queryset):  # Utilisez le seuil stocké dans la session pour la pagination
+        self.seuil = self.request.session.get('seuil',10)
+        return self.seuil   # Valeur par défaut si le seuil n'est pas défini dans la session
 
 
 #############    QUESTION 5 
@@ -376,7 +378,7 @@ def jour_avec_plus_echanges(request):
 
         else:
             messages.error(request, "Le formulaire n'est pas valide.")
-            logging.error("Problème avec le formulaire dans la focntion \'jour_avec_plus_echanges\' : %s", form.errors)
+            logging.error("Problème avec le formulaire dans la méthode \'jour_avec_plus_echanges\' : %s", form.errors)
        
     else:
         form = SearchDayWithMoreExchangesForm()
@@ -384,10 +386,6 @@ def jour_avec_plus_echanges(request):
 
 
 def render_histogram(liste1, liste2):
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    
     dates1 = [item[0].strftime('%Y-%m-%d') for item in liste1]
     dates2 = [item[0].strftime('%Y-%m-%d') for item in liste2]
     
@@ -542,7 +540,9 @@ def recherche_par_mots(request):
 
 
 #Pour commencer nos allons trié les emails pour regrouper les conversations, les messages transférés et les messages simples
+
 def get_conversation(email_id):
+    """identifie les emails d'une même conversation en se basant sur les expéditeurs et destinataires, ce qui permet de regrouper les messages liés."""
     query = """
             WITH conversation AS (
                 SELECT CASE WHEN em.sender_mail_id < rm.addresse_email_id THEN CONCAT(em.sender_mail_id, '-', rm.addresse_email_id)
@@ -614,7 +614,172 @@ def contenu_conversation(request, email_id):
     conversation = reconstruction_conversation(email_id)
     return render(request, 'detailsConversation.tmpl', {'conversation': conversation,
                                                         'subject':subject})
-    
+  
+  
+###########################  BONUS
+
+############# Employé ayant reçu ou envoyé le plus de messages externes 
+
+def employees_avec_plus_messages_externes(request):
+    # Employés qui ont reçus plus de mails de personnes externes
+    recus_externe = ReceiversMail.objects.filter(
+        addresse_email__estinterne=False
+    ).values(
+        'addresse_email__employee'
+    ).annotate(
+        nombre_email=Count('email')
+    ).order_by('-nombre_email')[:10]
+
+    employes_avec_recus_externe = [
+        {
+            'employe': Employee.objects.get(id=emp['addresse_email__employee']),
+            'nombre_email': emp['nombre_email']
+        }
+        for emp in recus_externe if emp['addresse_email__employee'] is not None
+    ]
+
+    # Employés qui ont envoyé des mails à des personnes externes
+    envoyes_externe = Email.objects.filter(
+        receiversmail__addresse_email__estinterne=False
+    ).values(
+        'sender_mail__employee'
+    ).annotate(
+        nombre_email=Count('id')
+    ).order_by('-nombre_email')[:10]
+
+    employes_avec_envoyes_externe = [
+        {
+            'employe': Employee.objects.get(id=emp['sender_mail__employee']),
+            'nombre_email': emp['nombre_email']
+        }
+        for emp in envoyes_externe if emp['sender_mail__employee'] is not None
+    ]
+
+    return render(request,'employesSuspects.tmpl', {'recus_externe':employes_avec_recus_externe,
+                                                    'envoyes_externe':employes_avec_envoyes_externe})
     
 
-   
+
+ 
+# Fonctions pour déterminer les sujets ayant eu le plus de réactions
+ 
+def choix_du_seuil(request):
+    if request.method == "POST":
+        seuil = request.POST.get('seuil')
+        try:
+            seuil = int(seuil)
+        except ValueError:
+            seuil = 5
+    return seuil
+
+def hot_subjects(request):
+    top_subject_names = []
+    group_activity_list = []
+    selected_subject = None
+    group_activity = {}
+    image_base64 = None
+
+    if request.method == "POST" and 'seuil_form' in request.POST:
+        seuil_form = SeuilForm(request.POST)
+        if seuil_form.is_valid():
+            seuil = seuil_form.cleaned_data['seuil']
+        else:
+            seuil = 5 
+    else:
+        seuil_form = SeuilForm()
+        seuil = 5  
+
+    # Construction de la liste déroulante des sujets de conversation
+    top_subjects = Email.objects.values('subject') \
+                                .annotate(email_count=Count('id')) \
+                                .order_by('-email_count')[:seuil]
+    top_subject_names = [subject['subject'] for subject in top_subjects]
+
+    # Traitement après la selection d'un sujet dans la liste
+    if request.method == "POST" and 'sujet' in request.POST:
+        selected_subject = request.POST.get('sujet')
+        emails = Email.objects.filter(subject=selected_subject)
+        
+        all_groups = set(
+            list(emails.values_list('sender_mail__employee__category__nom_groupe', flat=True)) +
+            list(ReceiversMail.objects.filter(email__in=emails).values_list('addresse_email__employee__category__nom_groupe', flat=True))
+        )
+        group_activity = {group or 'Inconnue': 0 for group in all_groups}
+
+        sender_activity = emails.values('sender_mail__employee__category__nom_groupe') \
+                                .annotate(email_count=Count('id')) \
+                                .order_by('-email_count')
+        for activity in sender_activity:
+            group_name = activity['sender_mail__employee__category__nom_groupe'] or 'Inconnue'
+            group_activity[group_name] += activity['email_count']
+
+        recipient_activity = ReceiversMail.objects.filter(email__in=emails) \
+                                                  .values('addresse_email__employee__category__nom_groupe') \
+                                                  .annotate(email_count=Count('email')) \
+                                                  .order_by('-email_count')
+        for activity in recipient_activity:
+            group_name = activity['addresse_email__employee__category__nom_groupe'] or 'Inconnue'
+            group_activity[group_name] += activity['email_count']
+
+
+        sorted_groups = sorted(group_activity.items(), key=lambda item: item[1], reverse=True)
+        group_activity_list = [{'group_name': group, 'email_count': count} for group, count in sorted_groups]
+
+        # Génération du graphique avec seaborn
+        if selected_subject:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            group_names = [item['group_name'] for item in group_activity_list]
+            email_counts = [item['email_count'] for item in group_activity_list]
+
+            sns.barplot(x=group_names, y=email_counts, palette="bright", ax=ax)
+            ax.set_title(f"Sur le sujet: {selected_subject}", fontsize=10)
+            ax.set_xlabel('Groupes/Catégories', fontsize=14)
+            ax.set_ylabel('Nombre d\'emails', fontsize=14)
+            plt.xticks(rotation=45)
+
+            # Conversion de la figure en base64
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            buf.seek(0)
+            image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+            buf.close()
+            plt.close(fig)
+          
+    sujet_form = SearchHotSubjectsForm(sujets=top_subject_names)
+
+    context = {
+        'seuil_form': seuil_form,
+        'sujet_form': sujet_form,
+        'top_subject_names': top_subject_names,
+        'group_activity_list': group_activity_list,
+        'selected_subject': selected_subject,
+        'image_base64': image_base64,
+        'email_details': emails.values('subject', 'date') if selected_subject else None
+    }
+    return render(request, 'detailsHotSubjects.tmpl', context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            

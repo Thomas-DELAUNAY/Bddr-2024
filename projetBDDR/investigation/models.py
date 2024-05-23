@@ -4,7 +4,7 @@ from django.db import models
 class Employee(models.Model):
     lastname = models.CharField(max_length=50) 
     firstname = models.CharField(max_length=50)
-    category = models.CharField(max_length=50, null=True)
+    category = models.ForeignKey('Groupe', on_delete=models.CASCADE,null=True,default=None)
     mailbox = models.CharField(max_length=50)
     
     #ici on définira le couple (lastname,firstname) comme clé primaire,unique
@@ -17,7 +17,12 @@ class Employee(models.Model):
 
     def __repr__(self):
         return f"{self.lastname} {self.firstname},{self.category}, {self.mailbox}"
-    
+
+
+###### Plus plus supplément
+class Groupe(models.Model):
+    nom_groupe = models.CharField(max_length=100,unique=True)
+   
 
 class AddresseEmail(models.Model):
     addresse = models.EmailField(unique=True)
@@ -49,10 +54,10 @@ class ReceiversMail(models.Model):
     
         
 class Email(models.Model):
-    date = models.DateTimeField()
+    date = models.DateTimeField(null=True)
     sender_mail = models.ForeignKey('AddresseEmail',null=True,default=None, on_delete=models.CASCADE, related_name='sent_email')
-    subject = models.CharField(max_length=200, default=None)
-    content = models.TextField(default='')
+    subject = models.CharField(max_length=200, default=None, null=True)
+    content = models.TextField(default='', null=True)
     
 # Cette classe gère les objets de type couple d'employées et le nombre de mails echangés entre ces derniers
 class CoupleCommunication(models.Model):
@@ -61,4 +66,6 @@ class CoupleCommunication(models.Model):
     total_mails_echanges = models.IntegerField()
     
     class Meta:
-        unique_together = ['employee_addresse_1', 'employee_addresse_2']   
+        unique_together = ['employee_addresse_1', 'employee_addresse_2','total_mails_echanges']   
+        
+        

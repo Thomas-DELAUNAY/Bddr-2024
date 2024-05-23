@@ -12,7 +12,7 @@ logging.basicConfig(filename='errors_daily.log', level=logging.INFO, format='%(a
 
 
 # Import des modèles 
-from investigation.models import Employee,AddresseEmail,ReceiversMail,Email
+from investigation.models import Employee,AddresseEmail,ReceiversMail,Email,Groupe
 
 
 def extract_emails(employee):
@@ -65,19 +65,18 @@ def traitment_file_xml(xml_file_path):
             # Peuplement de la table Employee
             try:
                 if firstname and lastname and category and mailbox:
-                    emp = Employee.objects.create(lastname=lastname, firstname=firstname, category=category,mailbox=mailbox)
+                    groupe, _ = Groupe.objects.get_or_create(nom_groupe=category)
+                    emp,_ = Employee.objects.get_or_create(lastname=lastname, firstname=firstname, category=groupe,mailbox=mailbox)
                     
                     for e in emails:
                         #création de l'addresseEmail
-                        AddresseEmail.objects.create(addresse=e,estinterne='enron' in e, employee=emp)
+                        AddresseEmail.objects.get_or_create(addresse=e,estinterne='enron' in e, employee=emp)[0]
                             
             except Employee.DoesNotExist as e:
                 logging.error(f" Erreur lors de la création de l'employé {lastname}: {e} ")
-                continue
-               
-            
-    print("    Traitement du fichier xml terminé     ")                                       
+                continue                                       
     _traitment()
+    print("    Traitement du fichier xml terminé     ") 
 
 
 
@@ -112,8 +111,8 @@ def parcours_file(file_path):
             content = contenu[content_start_index:]
 
             #Extraction des données
-            timestamp_str = timestamp_match.group(1)
-            sender_email = sender_match.group(1)
+            timestamp_str = timestamp_match.group(1) if timestamp_match else ""
+            sender_email = sender_match.group(1) if sender_match else ""
             receivers_email = receiver_match.group(1) if receiver_match else ""
             subject = subject_match.group(1) if subject_match else ""
             cc_receivers_email = cc_receiver_match.group(1)  if cc_receiver_match else ""
@@ -135,16 +134,16 @@ def parcours_file(file_path):
                 with transaction.atomic():                             
                 # Si l'addresse de l'expéditeur n'existe pas, nous la créons
                     sender, _ = AddresseEmail.objects.get_or_create(addresse=sender_email, estinterne=sender_email.endswith('@enron.com'))    
-                    #print(f" addresse {sender.addresse} a été ajouté avec succès.  ")
+                    
                     
                     # Création de l'Email
+                    # la fonction remove est la pour verifier les données avant de les insérer
                     email= Email.objects.create(
-                        date=date,
-                        sender_mail=sender,
-                        subject=subject,
-                        content=content
+                        date=remove_null_characters(date),
+                        sender_mail=remove_null_characters(sender),
+                        subject=remove_null_characters(subject),
+                        content=remove_null_characters(content)
                     )
-                    
                     
                     for type, emails in email_types.items():  # Boucle sur chaque type d'e-mail
                         for email_address in emails:  # Boucle sur chaque adresse e-mail dans le groupe
@@ -156,7 +155,7 @@ def parcours_file(file_path):
                                 receivers_mail = ReceiversMail.create_with_emails(cls= ReceiversMail,addresse_email=ad, type=type, emails=[email])
                                 receivers_mail.save()
 
-                                #print(" Ajout des destinataires terminé ")
+                                print(" Ajout des destinataires effectué ")
                                                  
             except Email.DoesNotExist as e:
                 logging.error(f" Erreur lors de l'enregistrement de l'email: {email}")  
@@ -164,6 +163,8 @@ def parcours_file(file_path):
             except IntegrityError as e:
                 logging.error(f"Erreur d'intégrité: {e}") 
                 #pass
+              
+            print("Traitement du dossier \"maildir\" terminé ")      
               
        
 def clean(ad):
@@ -174,3 +175,7 @@ def clean(ad):
     except ValidationError:
         return False  # Retourne False si l'adresse e-mail n'est pas valide
 
+def remove_null_characters(text):
+    if isinstance(text, str): 
+        return text.replace('\x00', '')
+    return text

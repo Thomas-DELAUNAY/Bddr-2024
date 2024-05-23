@@ -31,7 +31,7 @@
                         <div class="card-body">
                             <p class="card-text">Nom : {{ employee.lastname}}</p>
                             <p class="card-text">Prénom : {{ employee.firstname }}</p>
-                            <p class="card-text">Catégorie : {{ employee.category }}</p>
+                            <p class="card-text">Catégorie : {{ employee.category.nom_groupe }}</p>
                             <p class="card-text"> Mailbox : {{ employee.mailbox }}</p>
                             <p class="card-text">Adresses e-mail :
                                 <ul class="custom-list">
@@ -51,11 +51,6 @@
         </div>
 
     <div class="d-flex justify-content-center mt-5">  
-        <div class="me-3">  
-            <button type="button" class="btn btn-outline-primary">
-                <a href="{% url 'recherche' %}" style="background-color: inherit; border: none; text-decoration: none; color: inherit;">retour</a>
-            </button>
-        </div>
         <div>
             <button type="button" class="btn btn-outline-primary">
                 <a href='{% url "index" %}' style="background-color: inherit; border: none; text-decoration: none; color: inherit;"> page d'accueil </a>

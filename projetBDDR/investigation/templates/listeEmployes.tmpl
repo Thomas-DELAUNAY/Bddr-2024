@@ -29,7 +29,7 @@
             <tr class="{% cycle 'table-primary' 'table-light' %}">
               <td>{{ e.lastname }}</td>
               <td>{{ e.firstname }}</td>
-              <td>{{ e.category }}</td>
+              <td>{{ e.category.nom_groupe }}</td>
               <td>{{ e.mailbox }}</td>
             </tr>
           {% endfor %}

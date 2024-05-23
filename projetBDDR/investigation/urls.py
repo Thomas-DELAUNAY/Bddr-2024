@@ -17,4 +17,7 @@ urlpatterns = [
     path('rechercheDay/', jour_avec_plus_echanges, name="searchdaydetails"),
     path('rechercheEmail/', recherche_par_mots, name="rechercheEmail"),
     path('rechercheEmail/contenuEmail/<int:email_id>/', afficher_contenu_email, name="contenuEmail"),
+    path('HotSubjects', hot_subjects, name='hotSubjects'),
+    path('employesSuspects', employees_avec_plus_messages_externes, name="suspects"),
+
 ] 
