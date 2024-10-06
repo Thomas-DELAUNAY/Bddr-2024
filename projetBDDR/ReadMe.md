@@ -144,13 +144,13 @@ Voici une image de la page des fonctionnalités disponibles.
 ![page d'accueil](./investigation/static/Capture.PNG)
 
 Supposons que je souhaite faire une recherche d'un certain employé mais je ne connais que son prénon `kevin`. Le formulaire de recherche se présente ainsi 
-``python
+
 ![formulaire de recherche d'employé](./investigation//static/Capture_form1.PNG)
-``
+
 le résultat de la recherche:
-``python
+
 ![Résultats de la recherche](./investigation/static/Capture_form12.PNG)
-``
+
 L'application nous sort tous les employés dont le prénom est `kevin`.
 
 Maintenant à vous de jouez.
